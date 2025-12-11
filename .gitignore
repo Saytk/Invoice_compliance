@@ -1,0 +1,66 @@
+# --- Fichiers sensibles ---
+openai_key.txt
+*.env
+.env
+secret_*.txt
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.egg
+*.manifest
+*.spec
+
+# --- Virtual env ---
+venv/
+.env/
+.venv/
+env/
+
+# --- Logs ---
+*.log
+logs/
+llm_raw_flags_response.txt
+
+# --- Données & sorties ---
+data/old/
+data/tmp/
+outputs/
+out/
+rules_out/__pycache__/
+flags_out/
+*.jsonl
+
+# Fichiers générés par ton projet
+rules_out/
+generated_rules/
+invoices_cached/
+custom_invoices/
+invoices_to_check_backup/
+
+# --- IDE / Editeurs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Tests / Coverage ---
+htmlcov/
+.coverage
+.coverage.*
+.cache/
+pytest_cache/
+
+# --- Build / Distribution ---
+build/
+dist/
+*.whl
+*.tar.gz

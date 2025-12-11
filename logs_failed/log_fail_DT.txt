@@ -1,0 +1,27 @@
+[FAIL] Rule DT
+Reason: Decorator '@rule(' not found in code
+
+===== RAW CONTENT =====
+```python
+from datetime import datetime
+
+@rule("DT", penalty=0, desc="All line item time entries should be dated within 61 days of the invoice date.", version=1)
+def rule_dt(line) -> RuleResult | None:
+    invoice_date = datetime.strptime(line["INVOICE_DATE"], "%Y-%m-%d")
+    line_date = datetime.strptime(line["LINE_ITEM_DATE"], "%Y-%m-%d")
+    delta_days = abs((invoice_date - line_date).days)
+    if delta_days > 61:
+        msg = (
+            f"Line item date {line['LINE_ITEM_DATE']} is {delta_days} days "
+            f"away from invoice date {line['INVOICE_DATE']}, exceeding 61 days."
+        )
+        meta = {
+            "KID": line["KID"],
+            "UTBMS_CODE": line.get("UTBMS_CODE"),
+            "LINE_ITEM_DATE": line["LINE_ITEM_DATE"],
+            "INVOICE_DATE": line["INVOICE_DATE"],
+            "DAYS_DIFFERENCE": delta_days,
+        }
+        return RuleResult(True, "DT", 0, msg, score=None, meta=meta)
+    return None
+```

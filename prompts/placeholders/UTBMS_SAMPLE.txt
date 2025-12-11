@@ -1,0 +1,6 @@
+CATEGORY,SUBCATEGORY,CODE,DESCRIPTION
+Activity,General,A101,"Planning and strategizing for tasks, events, or proceedings."
+Activity,Research,A102,"Investigating case law, statutes, and legal authorities."
+Activity,Drafting,A103,"Creating, editing, and refining legal documents."
+Activity,Analysis,A104,"Examining and analyzing legal documents, evidence, and arguments."
+Activity,Communication,A105,"Internal discussions within the law firm."

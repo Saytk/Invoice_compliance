@@ -1,0 +1,3 @@
+FLAGS_PATH=C:\Fouad\Invoice_compliance\Data\flags.txt
+UTBMS_PATH=C:\Fouad\Invoice_compliance\Data\utbms.txt
+INVOICE_PATH=C:\Fouad\Invoice_compliance\Data\invoices.txt

@@ -1,0 +1,107 @@
+You are a senior billing-compliance engineer for legal invoices.
+Your task is to write EXACTLY ONE Python function that checks ONE billing rule (“flag”) against ONE invoice line.
+
+Your output MUST be STRICTLY:
+~~~python
+# your function here
+~~~
+No explanations. No text before or after. No comments outside the function.
+
+===============================================================
+RULE METADATA (THIS RUN)
+- RULE_CODE: <<RULE_CODE>>
+- RULE_DESCRIPTION: <<RULE_DESCRIPTION>>
+- DEFAULT_PENALTY: <<DEFAULT_PENALTY>>
+- RULE_VERSION: <<RULE_VERSION>>
+- FUNCTION_NAME: <<FUNCTION_NAME>>
+===============================================================
+
+## CONTRACT (STRICT)
+You MUST output:
+~~~python
+@rule("<<RULE_CODE>>", penalty=<<DEFAULT_PENALTY>>, desc="<<RULE_DESCRIPTION>>", version=<<RULE_VERSION>>)
+def <<FUNCTION_NAME>>(line) -> RuleResult | None:
+    ...
+~~~
+Rules:
+- The FIRST non-whitespace character MUST be "@rule(".
+- The function takes EXACTLY one argument: line (a dict).
+- Use ONLY the helpers listed below.
+- Use ONLY data present explicitly inside `line`.
+- NO imports (runtime will add imports automatically).
+- NO backticks.
+- NO placeholder text.
+- For numeric fields, always convert using safe_float.
+- Messages MUST be ≤ 200 characters.
+- Return:
+    RuleResult(True, "<<RULE_CODE>>", <<DEFAULT_PENALTY>>, "<short message>", score=None, meta={...})
+  OR None.
+
+===============================================================
+## HELPERS AVAILABLE (already imported at runtime)
+You MUST use these names exactly as written:
+
+parse_date(date_str: str) -> datetime.date
+days_between(date1: date, date2: date) -> int
+safe_float(value) -> float | None
+===============================================================
+
+## ACCESSIBLE FIELDS IN `line`
+Each invoice line is a dict. All fields are normalized and non-missing unless noted.
+
+### Invoice-level fields
+- INVOICE_DATE: string date ("YYYY-MM-DD")
+- INVOICE_NUMBER: invoice identifier
+- CLIENT_ID: client id
+- CLIENT_NAME: client name
+- LAW_FIRM_ID: law firm identifier
+- LAW_FIRM_NAME: law firm name
+- LAW_FIRM_MATTER_ID: matter/case id
+- INVOICE_TOTAL: numeric as string → use safe_float
+
+### Billing period
+- BILLING_START_DATE: string date
+- BILLING_END_DATE: string date
+
+### Line-level fields
+- LINE_ITEM_NUMBER: position of the line in the invoice
+- LINE_ITEM_DATE: string date ("YYYY-MM-DD")
+- LINE_ITEM_DESCRIPTION: narrative text
+- LINE_ITEM_NUMBER_OF_UNITS: hours/units (numeric as string)
+- LINE_ITEM_UNIT_COST: cost per unit (numeric as string)
+- LINE_ITEM_TOTAL: line amount (numeric as string)
+- LINE_ITEM_ADJUSTMENT_AMOUNT: numeric as string
+- EXP/FEE/INV_ADJ_TYPE: type of line (e.g., fee, expense)
+- TIMEKEEPER_ID: unique id for the timekeeper
+- TIMEKEEPER_NAME: name
+- TIMEKEEPER_CLASSIFICATION: role (partner, associate, paralegal)
+- RUNID: processing-run identifier
+- KID: unique key for this line
+
+### UTBMS fields (added through preprocessing)
+- LINE_ITEM_ACTIVITY_CODE: raw activity code
+- LINE_ITEM_TASK_CODE: raw task code
+- LINE_ITEM_EXPENSE_CODE: expense code
+- UTBMS_CODE: normalized UTBMS code derived from the above
+- UTBMS_CATEGORY: UTBMS high-level category
+- UTBMS_SUBCATEGORY: UTBMS subcategory
+- UTBMS_DESCRIPTION: UTBMS description string
+- UTBMS_FAMILY: "TASK" / "ACTIVITY" / "" depending on the source
+
+### Optional multi-line context
+Provided ONLY for rules requiring cross-line checks (duplicate detection, cross-matter, cross-invoice…):
+- ALL_LINES: list[dict], each with the same schema as `line`.
+
+Use ONLY if relevant to the rule.
+
+
+===============================================================
+## DO NOT DO THESE
+- DO NOT invent fields.
+- DO NOT guess narrative meaning unless the rule requires narrative interpretation.
+- DO NOT rely on anything outside `line` except the helpers and optional ALL_LINES.
+- DO NOT create more than one function.
+- DO NOT output anything outside the fenced python block.
+
+===============================================================
+## END OF PROMPT — NOW GENERATE THE FUNCTION

@@ -1,0 +1,77 @@
+# 100% local — mini démo "pourcentage administratif" via embeddings ST
+# Modèle par défaut : intfloat/multilingual-e5-small (FR/EN ok)
+
+import os
+import re
+import numpy as np
+from sentence_transformers import SentenceTransformer
+
+# ====== À MODIFIER ICI ======
+KEYWORD = "filing"
+FLAG_DESCRIPTION = (
+    "Administrative functions including billing, scheduling, calendaring, filing, "
+    "scanning, uploading/downloading documents, time/expense entry."
+)
+
+n1 = "Reviewed intervenor's letter to the Court requesting trial by jury including the fee for same."
+n2 = "Research"
+NARRATIVE = n2
+# ============================
+
+ST_MODEL = os.environ.get("ST_MODEL", "intfloat/multilingual-e5-small")
+
+def _normalize(v: np.ndarray) -> np.ndarray:
+    n = np.linalg.norm(v)
+    return v / (n + 1e-12)
+
+def _cos01(a: np.ndarray, b: np.ndarray) -> float:
+    # cos in [-1,1] -> map to [0,1]
+    c = float(np.dot(_normalize(a), _normalize(b)))
+    return max(0.0, min(1.0, (c + 1.0) / 2.0))
+
+def _keyword_hit(keyword: str, text: str) -> float:
+    kw = (keyword or "").strip().lower()
+    t = (text or "").lower()
+    if not kw or not t:
+        return 0.0
+    if kw in t:
+        return 1.0
+    stem = kw[:6] if len(kw) >= 6 else kw  # racine très grossière
+    return 0.9 if stem and any(tok.startswith(stem) for tok in re.findall(r"[a-z0-9]{3,}", t)) else 0.0
+
+def _e5_prompt(text: str, kind: str) -> str:
+    """
+    E5 recommande d'ajouter des préfixes :
+      - "query: ..." pour la requête (ici le flag)
+      - "passage: ..." pour le texte (ici le narrative)
+    """
+    kind = kind.lower()
+    if kind == "query":
+        return f"query: {text}".strip()
+    return f"passage: {text}".strip()
+
+def embed_pair_e5(model: SentenceTransformer, flag_text: str, narrative: str):
+    a = model.encode(_e5_prompt(flag_text, "query"), convert_to_numpy=True, normalize_embeddings=True)
+    b = model.encode(_e5_prompt(narrative, "passage"), convert_to_numpy=True, normalize_embeddings=True)
+    return a.astype(np.float32), b.astype(np.float32)
+
+def score_percentage(keyword: str, flag_desc: str, narrative: str,
+                     w_sem: float = 0.7, w_kw: float = 0.3):
+    flag_text = f"{keyword}. {flag_desc}".strip()
+
+    model = SentenceTransformer(ST_MODEL)
+    a, b = embed_pair_e5(model, flag_text, narrative)
+
+    sem = _cos01(a, b)                 # [0,1]
+    kw = _keyword_hit(keyword, narrative)  # [0,1]
+    score = max(0.0, min(1.0, w_sem * sem + w_kw * kw))
+    return round(score * 100.0, 1), f"st:{ST_MODEL}", float(sem), float(kw)
+
+if __name__ == "__main__":
+    pct, backend, sem, kw = score_percentage(KEYWORD, FLAG_DESCRIPTION, NARRATIVE)
+    print(f"Backend: {backend}")
+    print(f"Keyword: {KEYWORD!r}")
+    print(f"Flag description: {FLAG_DESCRIPTION}")
+    print(f"Narrative: {NARRATIVE}")
+    print(f"Semantic similarity (0..1): {sem:.3f} | keyword hit: {kw:.2f}")
+    print(f"\n==> Probabilité (heuristique) : {pct:.1f}%")
