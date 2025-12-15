@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import os
 import sys
 import json
@@ -6,39 +7,113 @@ import csv
 import argparse
 import importlib.util
 from pathlib import Path
+from typing import Any, Dict, List, Callable, Optional, Tuple
 
 from rules_runtime import rule, RuleResult, parse_date, days_between, safe_float
 
+# ============================================================
+# Paths
+# ============================================================
 ROOT = Path(__file__).resolve().parent
 RULES_DIR = ROOT / "rules_out"
 DEFAULT_CSV = ROOT / "invoices_to_check.csv"
 UTBMS_CSV = ROOT / "data" / "utbms.csv"
+GLOBAL_INVOICES_CSV = ROOT / "data" / "invoices.csv"
+FLAGS_CATEGORIES_JSON = ROOT / "data" / "flags_engine_categories.json"
 
-# CSV global contenant toutes les lignes de factures (historique complet)
-GLOBAL_INVOICE_CSV = ROOT / "data" / "invoices.csv"
+# ============================================================
+# Logging (multi-niveaux) + hook GUI
+# ============================================================
+
+LOG_LEVELS = {
+    "ERROR": 0,
+    "WARN": 1,
+    "INFO": 2,
+    "DEBUG": 3,
+    "TRACE": 4,
+}
+
+_env_level = os.environ.get("INVOICE_LOG_LEVEL", "INFO").upper()
+LOG_LEVEL = LOG_LEVELS.get(_env_level, LOG_LEVELS["INFO"])
+
+GUI_LOGGER = None  # type: ignore[assignment]
+
+
+def set_log_level(level_name: str) -> None:
+    global LOG_LEVEL
+    level_name = level_name.upper()
+    LOG_LEVEL = LOG_LEVELS.get(level_name, LOG_LEVELS["INFO"])
+
+
+def _should_log(level_name: str) -> bool:
+    return LOG_LEVELS.get(level_name, 999) <= LOG_LEVEL
+
+
+def attach_gui_logger(logger) -> None:
+    global GUI_LOGGER
+    GUI_LOGGER = logger
+    if _should_log("DEBUG"):
+        print("[DEBUG] GUI logger attached to rules_engine", file=sys.stderr)
+
+
+def log(level: str, msg: str) -> None:
+    if not _should_log(level):
+        return
+
+    full = f"[{level}] {msg}"
+    print(full, file=sys.stderr)
+
+    if GUI_LOGGER is not None:
+        try:
+            GUI_LOGGER.write(full)
+        except Exception:
+            pass
+
+
+def log_error(msg: str) -> None:
+    log("ERROR", msg)
+
+
+def log_warn(msg: str) -> None:
+    log("WARN", msg)
+
+
+def log_info(msg: str) -> None:
+    log("INFO", msg)
+
+
+def log_debug(msg: str) -> None:
+    log("DEBUG", msg)
+
+
+def log_trace(msg: str) -> None:
+    log("TRACE", msg)
 
 
 # ============================================================
 # Chargement dynamique des règles (fichiers .py dans rules_out/)
 # ============================================================
+
 def load_all_rules():
     rules = []
     if not RULES_DIR.exists():
-        print(f"[WARN] Rules directory does not exist: {RULES_DIR}", file=sys.stderr)
+        log_warn(f"Rules directory does not exist: {RULES_DIR}")
         return rules
 
+    log_info(f"Loading rules from: {RULES_DIR}")
     for py_file in RULES_DIR.glob("*.py"):
         if py_file.name.startswith("_"):
+            log_debug(f"Skipping private rule file: {py_file.name}")
             continue
 
+        log_debug(f"Loading rule module from: {py_file}")
         spec = importlib.util.spec_from_file_location(py_file.stem, py_file)
         if spec is None or spec.loader is None:
-            print(f"[ERR] Could not create spec for {py_file}", file=sys.stderr)
+            log_error(f"Could not create spec for {py_file}")
             continue
 
         module = importlib.util.module_from_spec(spec)
 
-        # Injection des symboles nécessaires dans le namespace du module
         module.__dict__.update({
             "rule": rule,
             "RuleResult": RuleResult,
@@ -50,31 +125,114 @@ def load_all_rules():
         try:
             spec.loader.exec_module(module)
         except Exception as e:
-            print(f"[ERR] Failed loading rule file {py_file}: {e}", file=sys.stderr)
+            log_error(f"Failed loading rule file {py_file}: {e}")
+            if _should_log("DEBUG"):
+                import traceback
+                traceback.print_exc()
             continue
 
+        count_before = len(rules)
         for attr in dir(module):
             obj = getattr(module, attr)
             if callable(obj) and hasattr(obj, "_rule_code"):
                 rules.append(obj)
+                log_debug(f"  Registered rule: {obj._rule_code} ({attr})")
+
+        if len(rules) == count_before:
+            log_trace(f"No rules found in module {py_file.name}")
+
+    log_info(f"{len(rules)} rules loaded.")
+    if _should_log("TRACE"):
+        for r in rules:
+            log_trace(f"Rule loaded: code={getattr(r, '_rule_code', '?')} func={r.__name__}")
 
     return rules
 
 
 # ============================================================
+# Flags categories (STRUCTURED / NARRATIVE_LLM / IGNORED_OR_PREPROCESS)
+# ============================================================
+
+def load_flags_categories() -> Dict[str, str]:
+    """
+    Charge data/flags_engine_categories.json si présent.
+    Retour: code -> category
+    """
+    if not FLAGS_CATEGORIES_JSON.exists():
+        log_warn(f"Flags categories file not found: {FLAGS_CATEGORIES_JSON} (all treated as STRUCTURED by default)")
+        return {}
+
+    try:
+        data = json.loads(FLAGS_CATEGORIES_JSON.read_text(encoding="utf-8"))
+    except Exception as e:
+        log_warn(f"Could not parse {FLAGS_CATEGORIES_JSON.name}: {e} (all treated as STRUCTURED by default)")
+        return {}
+
+    if not isinstance(data, dict):
+        log_warn(f"{FLAGS_CATEGORIES_JSON.name} must be a JSON object {{code: category}}. Got: {type(data).__name__}")
+        return {}
+
+    out: Dict[str, str] = {}
+    for k, v in data.items():
+        if not isinstance(k, str) or not isinstance(v, str):
+            continue
+        code = k.strip().upper()
+        cat = v.strip().upper()
+        if code:
+            out[code] = cat
+    log_info(f"Loaded {len(out)} flag categories from {FLAGS_CATEGORIES_JSON}")
+    return out
+
+
+def get_flag_category(code: str, categories: Dict[str, str]) -> str:
+    """
+    Par défaut, tout ce qui n'est pas dans le JSON est STRUCTURED.
+    """
+    return categories.get((code or "").strip().upper(), "STRUCTURED")
+
+
+def split_rules_by_category(
+    rules,
+    categories: Dict[str, str],
+) -> Tuple[list, list, list]:
+    """
+    Retourne (structured_rules, narrative_rules, ignored_rules).
+    - ignored_rules = ceux dont la category JSON est IGNORED_OR_PREPROCESS
+      (ils ne devraient normalement pas être dans rules_out, mais on gère au cas où)
+    """
+    structured = []
+    narrative = []
+    ignored = []
+
+    for r in rules:
+        code = getattr(r, "_rule_code", r.__name__)
+        cat = get_flag_category(str(code), categories)
+
+        if cat == "IGNORED_OR_PREPROCESS":
+            ignored.append(r)
+        elif cat == "NARRATIVE_LLM":
+            narrative.append(r)
+        else:
+            structured.append(r)
+
+    return structured, narrative, ignored
+
+
+# ============================================================
 # UTBMS : chargement & jointure
 # ============================================================
-def load_utbms_lookup():
+
+def load_utbms_lookup() -> Dict[str, Dict[str, str]]:
     """
     Charge le fichier data/utbms.csv s'il existe.
     Format attendu : CATEGORY,SUBCATEGORY,CODE,DESCRIPTION
     Retourne un dict : code -> row_dict
     """
     if not UTBMS_CSV.exists():
-        print(f"[WARN] UTBMS file not found: {UTBMS_CSV} (UTBMS fields will be missing)", file=sys.stderr)
+        log_warn(f"UTBMS file not found: {UTBMS_CSV} (UTBMS fields will be missing)")
         return {}
 
-    lookup = {}
+    lookup: Dict[str, Dict[str, str]] = {}
     with UTBMS_CSV.open("r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -82,10 +240,12 @@ def load_utbms_lookup():
             if not code:
                 continue
             lookup[code] = row
+
+    log_info(f"{len(lookup)} UTBMS codes loaded from {UTBMS_CSV}")
     return lookup
 
 
-def enrich_line_with_utbms(line: dict, utbms_lookup: dict):
+def enrich_line_with_utbms(line: dict, utbms_lookup: dict) -> dict:
     """
     Si UTBMS_CODE n'est pas déjà présent, on le déduit de :
     - LINE_ITEM_TASK_CODE
@@ -107,7 +267,6 @@ def enrich_line_with_utbms(line: dict, utbms_lookup: dict):
 
     utbms_info = utbms_lookup.get(code)
     if not utbms_info:
-        # Pas trouvé dans la table UTBMS, on met juste le code brut si absent
         line.setdefault("UTBMS_CODE", code)
         return line
 
@@ -116,7 +275,6 @@ def enrich_line_with_utbms(line: dict, utbms_lookup: dict):
     line["UTBMS_SUBCATEGORY"] = utbms_info.get("SUBCATEGORY", "")
     line["UTBMS_DESCRIPTION"] = utbms_info.get("DESCRIPTION", "")
 
-    # Famille heuristique
     if code == (line.get("LINE_ITEM_TASK_CODE") or "").strip():
         family = "TASK"
     elif code == (line.get("LINE_ITEM_ACTIVITY_CODE") or "").strip():
@@ -131,43 +289,16 @@ def enrich_line_with_utbms(line: dict, utbms_lookup: dict):
 
 
 # ============================================================
-# Chargement global : toutes les lignes de factures (invoices.csv)
+# Lecture CSV générique
 # ============================================================
-def load_global_invoice_lines(utbms_lookup: dict) -> list[dict]:
-    """
-    Charge TOUTES les lignes depuis data/invoices.csv (si présent),
-    et les enrichit avec UTBMS.
-    Retourne une liste de dicts représentant toutes les lignes disponibles.
-    """
-    if not GLOBAL_INVOICE_CSV.exists():
-        print(f"[WARN] Global invoice CSV not found: {GLOBAL_INVOICE_CSV}", file=sys.stderr)
+
+def load_lines_from_csv(csv_path: Path, utbms_lookup: dict, label: str) -> List[Dict[str, Any]]:
+    if not csv_path.exists():
+        log_error(f"CSV file not found for {label}: {csv_path}")
         return []
 
-    lines: list[dict] = []
-    with GLOBAL_INVOICE_CSV.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            line = dict(row)
-            line = enrich_line_with_utbms(line, utbms_lookup)
-            lines.append(line)
-
-    print(f"[INFO] Loaded {len(lines)} global invoice lines from {GLOBAL_INVOICE_CSV}", file=sys.stderr)
-    return lines
-
-
-# ============================================================
-# Lecture du CSV “lignes en vrac” (fichier à checker)
-# ============================================================
-def load_lines_from_csv(csv_path: Path, utbms_lookup: dict):
-    """
-    Lit un CSV avec des lignes en vrac (une ligne de facture par row).
-    Retourne une liste de dicts (une dict = une ligne),
-    en les enrichissant avec UTBMS.
-    """
-    if not csv_path.exists():
-        raise SystemExit(f"[ERR] CSV file not found: {csv_path}")
-
-    lines = []
+    log_info(f"Loading {label} lines from {csv_path}…")
+    lines: List[Dict[str, Any]] = []
     with csv_path.open("r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -175,49 +306,86 @@ def load_lines_from_csv(csv_path: Path, utbms_lookup: dict):
             line = enrich_line_with_utbms(line, utbms_lookup)
             lines.append(line)
 
+    log_info(f"Loaded {len(lines)} {label} lines from {csv_path}")
+    if _should_log("TRACE"):
+        for i, ln in enumerate(lines[:5]):
+            log_trace(f"[{label}] Sample line #{i}: KID={ln.get('KID')} INV={ln.get('INVOICE_NUMBER')}")
+
     return lines
 
 
+def load_global_invoice_lines(utbms_lookup: dict) -> List[Dict[str, Any]]:
+    return load_lines_from_csv(GLOBAL_INVOICES_CSV, utbms_lookup, label="global")
+
+
 # ============================================================
-# Construction du contexte global ALL_LINES (Option A: 1 ligne / KID)
+# Construction du contexte ALL_LINES
 # ============================================================
-def build_all_context_lines(global_lines: list[dict], sample_lines: list[dict]) -> list[dict]:
-    """
-    Construit la liste ALL_LINES utilisée par les règles.
 
-    ALL_LINES = historique (global_lines) + invoices_to_check (sample_lines),
-    avec UNE SEULE ligne par KID (peu importe la source).
-    """
-    all_lines: list[dict] = []
-    seen_kids: set[str] = set()
+def build_all_lines_context(
+    global_lines: List[Dict[str, Any]],
+    custom_lines: List[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    log_info(
+        f"Combining global lines ({len(global_lines)}) + custom lines ({len(custom_lines)}) "
+        f"into ALL_LINES context…"
+    )
 
-    # 1) Ajouter les global_lines, dédupliqué par KID
-    for ln in global_lines:
-        kid = (ln.get("KID") or "").strip()
-        if kid and kid in seen_kids:
-            continue
-        all_lines.append(ln)
-        if kid:
-            seen_kids.add(kid)
+    all_lines = list(global_lines) + list(custom_lines)
 
-    # 2) Ajouter les sample_lines, dédupliqué aussi par KID (vs global + local)
-    for ln in sample_lines:
-        kid = (ln.get("KID") or "").strip()
-        if kid and kid in seen_kids:
-            # déjà vue (global ou local), on ne la rajoute pas
-            continue
-        all_lines.append(ln)
-        if kid:
-            seen_kids.add(kid)
+    log_info(f"ALL_LINES context size: {len(all_lines)}")
+
+    if _should_log("DEBUG"):
+        by_invoice: Dict[str, int] = {}
+        by_tk: Dict[str, int] = {}
+        by_matter: Dict[str, int] = {}
+
+        for ln in all_lines:
+            inv = (ln.get("INVOICE_NUMBER") or "").strip() or "<EMPTY>"
+            tk = (ln.get("TIMEKEEPER_ID") or "").strip() or "<EMPTY>"
+            matter = (ln.get("LAW_FIRM_MATTER_ID") or "").strip() or "<EMPTY>"
+
+            by_invoice[inv] = by_invoice.get(inv, 0) + 1
+            by_tk[tk] = by_tk.get(tk, 0) + 1
+            by_matter[matter] = by_matter.get(matter, 0) + 1
+
+        log_debug("[DEBUG] --- ALL_LINES Summary by invoice ---")
+        for inv, count in sorted(by_invoice.items()):
+            log_debug(f"[DEBUG]   Invoice {inv}: {count} lines")
+
+        log_debug("[DEBUG] --- ALL_LINES Summary by timekeeper ---")
+        for tk, count in sorted(by_tk.items()):
+            log_debug(f"[DEBUG]   TK {tk}: {count} lines")
+
+        log_debug("[DEBUG] --- ALL_LINES Summary by matter ---")
+        for mat, count in sorted(by_matter.items()):
+            log_debug(f"[DEBUG]   Matter {mat}: {count} lines")
+
+    if _should_log("TRACE"):
+        log_trace("[TRACE] First 5 ALL_LINES entries:")
+        for ln in all_lines[:5]:
+            log_trace(
+                f"  KID={ln.get('KID')} INV={ln.get('INVOICE_NUMBER')} "
+                f"TK={ln.get('TIMEKEEPER_ID')} DATE={ln.get('LINE_ITEM_DATE')}"
+            )
 
     return all_lines
 
 
 # ============================================================
-# Application des règles à une ligne
+# Application des règles à une ligne (STRUCTURED uniquement)
 # ============================================================
-def apply_rules_to_line(line: dict, rules, debug: bool = False):
+
+def apply_rules_to_line(line: dict, rules, debug_errors: bool = False):
+    """
+    Applique toutes les règles (déterministes) à une ligne.
+    Retourne une liste d'objets "flag" (dicts) pour cette ligne.
+    """
     results = []
+    kid = line.get("KID")
+    inv = line.get("INVOICE_NUMBER")
+
+    log_debug(f"Applying {len(rules)} rules to KID={kid} INV={inv}")
 
     for rule_func in rules:
         code = getattr(rule_func, "_rule_code", rule_func.__name__)
@@ -226,15 +394,26 @@ def apply_rules_to_line(line: dict, rules, debug: bool = False):
             out = rule_func(line)
 
             if out is None:
+                log_trace(f"[TRACE] Rule {code} -> None for KID={kid}")
                 continue
 
             if not isinstance(out, RuleResult):
+                msg = f"Invalid return type from rule {code}"
+                log_warn(msg)
                 results.append({
-                    "code": code,
+                    "code": str(code),
                     "triggered": False,
-                    "error": f"Invalid return type from rule {code}"
+                    "penalty": None,
+                    "message": msg,
+                    "score": None,
+                    "meta": None,
+                    "error": msg,
                 })
                 continue
+
+            log_debug(
+                f"Rule {code} TRIGGERED for KID={kid}: penalty={out.penalty} msg={out.message}"
+            )
 
             results.append({
                 "code": out.code,
@@ -247,182 +426,226 @@ def apply_rules_to_line(line: dict, rules, debug: bool = False):
             })
 
         except Exception as e:
-            if debug:
+            err_msg = f"Exception in rule {code} for KID={kid}: {e}"
+            log_error(err_msg)
+            if debug_errors:
                 raise
             results.append({
-                "code": code,
+                "code": str(code),
                 "triggered": False,
-                "error": str(e),
+                "penalty": None,
+                "message": "",
+                "score": None,
+                "meta": None,
+                "error": err_msg,
             })
 
     return results
 
 
 # ============================================================
-# Groupement par facture (INVOICE_NUMBER)
+# Exécution sur les lignes à vérifier (STRUCTURED + option NARRATIVE)
 # ============================================================
-def group_lines_by_invoice(lines):
-    """
-    Regroupe les lignes par INVOICE_NUMBER.
-    Retourne dict: invoice_number -> list[lines]
-    """
-    invoices = {}
-    for line in lines:
-        inv_no = line.get("INVOICE_NUMBER") or line.get("invoice_number") or ""
-        inv_no = str(inv_no).strip()
-        if inv_no not in invoices:
-            invoices[inv_no] = []
-        invoices[inv_no].append(line)
-    return invoices
+
+NarrativeRunner = Callable[
+    [List[Dict[str, Any]], List[str], Dict[str, Any]],
+    Dict[str, List[Dict[str, Any]]]
+]
+# signature attendue:
+# narrative_runner(lines, narrative_flag_codes, ctx) -> dict kid -> list[flag_dict]
 
 
-# ============================================================
-# Application des règles avec ALL_LINES global
-# ============================================================
-def apply_rules_to_invoices_from_lines(lines, rules, all_context_lines, debug: bool = False):
+def run_engine_on_custom_lines(
+    custom_lines: List[Dict[str, Any]],
+    rules,
+    all_lines_context: List[Dict[str, Any]],
+    debug_errors: bool = False,
+    *,
+    flags_categories: Optional[Dict[str, str]] = None,
+    narrative_runner: Optional[NarrativeRunner] = None,
+):
     """
-    Prend des lignes “en vrac”, les groupe par facture, injecte ALL_LINES
-    (historiques + invoices_to_check, dédupliqué par KID) et applique les règles.
-
-    - lines : lignes à vérifier (échantillon / une seule facture / une seule ligne)
-    - all_context_lines : ALL_LINES commun à toutes les lignes
+    Pour chaque ligne:
+      - injecte ALL_LINES
+      - applique rules deterministes (STRUCTURED)
+      - si narrative_runner fourni: traite aussi les NARRATIVE_LLM en batch
     """
-    by_invoice = group_lines_by_invoice(lines)
     results = []
 
-    for invoice_number, inv_lines in by_invoice.items():
-        enriched = []
-        for ln in inv_lines:
-            ln_copy = dict(ln)
-            ln_copy["ALL_LINES"] = all_context_lines
-            enriched.append(ln_copy)
+    log_info(f"Running rules on {len(custom_lines)} custom lines…")
 
-        per_line_results = []
-        for ln in enriched:
-            res = apply_rules_to_line(ln, rules, debug=debug)
-            per_line_results.append({
-                "KID": ln.get("KID"),
-                "LINE_ITEM_NUMBER": ln.get("LINE_ITEM_NUMBER"),
-                "INVOICE_NUMBER": ln.get("INVOICE_NUMBER"),
-                "LAW_FIRM_MATTER_ID": ln.get("LAW_FIRM_MATTER_ID"),
-                "results": res,
-            })
+    categories = flags_categories or {}
+    structured_rules, narrative_rules, ignored_rules = split_rules_by_category(rules, categories)
+
+    if ignored_rules:
+        ig_codes = [getattr(r, "_rule_code", r.__name__) for r in ignored_rules]
+        log_warn(f"Ignored rules present in rules_out (category IGNORED_OR_PREPROCESS): {ig_codes}")
+
+    # 1) deterministic per-line
+    per_line_flags: Dict[str, List[Dict[str, Any]]] = {}
+    for ln in custom_lines:
+        ln_kid = ln.get("KID")
+        ln_inv = ln.get("INVOICE_NUMBER")
+        ln_num = ln.get("LINE_ITEM_NUMBER")
+
+        log_debug(f"Processing custom line KID={ln_kid} INV={ln_inv} LINE_ITEM_NUMBER={ln_num}")
+
+        ln_with_ctx = dict(ln)
+        ln_with_ctx["ALL_LINES"] = all_lines_context
+
+        flags = apply_rules_to_line(ln_with_ctx, structured_rules, debug_errors=debug_errors)
+        per_line_flags[str(ln_kid)] = flags if flags else []
+
+    # 2) narrative batch (optional)
+    narrative_map: Dict[str, List[Dict[str, Any]]] = {}
+    if narrative_runner is not None and narrative_rules:
+        narrative_codes = [str(getattr(r, "_rule_code", r.__name__)) for r in narrative_rules]
+        try:
+            narrative_map = narrative_runner(
+                custom_lines,
+                narrative_codes,
+                {
+                    "all_lines": all_lines_context,
+                    "categories": categories,
+                },
+            ) or {}
+            log_info(f"Narrative runner returned results for {len(narrative_map)} KIDs")
+        except Exception as e:
+            log_error(f"Narrative runner failed: {e}")
+            narrative_map = {}
+
+    # 3) merge output structure
+    for ln in custom_lines:
+        ln_kid = ln.get("KID")
+        kid_key = str(ln_kid)
+
+        flags_out = []
+        flags_out.extend(per_line_flags.get(kid_key, []))
+        flags_out.extend(narrative_map.get(kid_key, []))
 
         results.append({
-            "invoice_number": invoice_number,
-            "results_per_line": per_line_results,
+            "KID": ln_kid,
+            "INVOICE_NUMBER": ln.get("INVOICE_NUMBER"),
+            "LINE_ITEM_NUMBER": ln.get("LINE_ITEM_NUMBER"),
+            "LAW_FIRM_MATTER_ID": ln.get("LAW_FIRM_MATTER_ID"),
+            "flags": flags_out if flags_out else [],
         })
 
     return results
 
 
 # ============================================================
-# Flatten : une entrée par KID avec la liste des flags appliqués
+# API pour le client (GUI, etc.)
 # ============================================================
-def flatten_results_per_line(nested_results: list[dict]) -> list[dict]:
+
+def init_engine(
+    custom_csv: str | Path | None = None,
+    log_level: str | None = None,
+    debug: bool = False,
+) -> dict:
     """
-    Transforme la structure imbriquée :
-      [ { invoice_number, results_per_line: [ {KID, ..., results:[...]}, ... ] }, ... ]
-    en une liste plate :
-      [ { KID, INVOICE_NUMBER, LINE_ITEM_NUMBER, LAW_FIRM_MATTER_ID, flags:[...] }, ... ]
-
-    flags = uniquement les règles pour lesquelles triggered == True.
+    Point d'entrée simple pour un client (GUI / web / API).
     """
-    flat: list[dict] = []
+    if log_level is not None:
+        set_log_level(log_level)
+    if debug and LOG_LEVEL < LOG_LEVELS["DEBUG"]:
+        set_log_level("DEBUG")
 
-    for invoice_block in nested_results:
-        inv_no = invoice_block.get("invoice_number")
-        for line_res in invoice_block.get("results_per_line", []):
-            kid = line_res.get("KID")
-            line_no = line_res.get("LINE_ITEM_NUMBER")
-            matter_id = line_res.get("LAW_FIRM_MATTER_ID")
+    log_info("Initializing engine via init_engine()…")
 
-            triggered_flags = []
-            for r in line_res.get("results", []):
-                if not r.get("triggered"):
-                    continue
-                triggered_flags.append({
-                    "code": r.get("code"),
-                    "penalty": r.get("penalty"),
-                    "message": r.get("message"),
-                    "score": r.get("score"),
-                    "meta": r.get("meta"),
-                    "error": r.get("error"),
-                })
+    rules = load_all_rules()
+    categories = load_flags_categories()
 
-            flat.append({
-                "KID": kid,
-                "INVOICE_NUMBER": line_res.get("INVOICE_NUMBER", inv_no),
-                "LINE_ITEM_NUMBER": line_no,
-                "LAW_FIRM_MATTER_ID": matter_id,
-                "flags": triggered_flags,
-            })
+    utbms_lookup = load_utbms_lookup()
+    global_lines = load_global_invoice_lines(utbms_lookup)
 
-    return flat
+    custom_lines: List[Dict[str, Any]] = []
+    if custom_csv is not None:
+        custom_lines = load_lines_from_csv(Path(custom_csv), utbms_lookup, label="custom")
+
+    all_lines = build_all_lines_context(global_lines, custom_lines)
+
+    return {
+        "rules": rules,
+        "flags_categories": categories,
+        "utbms_lookup": utbms_lookup,
+        "global_lines": global_lines,
+        "custom_lines": custom_lines,
+        "all_lines": all_lines,
+    }
 
 
 # ============================================================
 # CLI
 # ============================================================
+
 def main():
-    parser = argparse.ArgumentParser(description="Run billing rule engine on CSV invoice lines.")
+    parser = argparse.ArgumentParser(
+        description="Run billing rule engine on invoice lines."
+    )
     parser.add_argument(
         "--csv",
         type=str,
         default=str(DEFAULT_CSV),
-        help=f"Path to CSV file with invoice lines (default: {DEFAULT_CSV.name})"
+        help=f"Path to CSV file with invoice lines to check (default: {DEFAULT_CSV.name})",
     )
-    parser.add_argument("--debug", action="store_true", help="Re-raise exceptions from rules")
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        choices=["ERROR", "WARN", "INFO", "DEBUG", "TRACE"],
+        default=None,
+        help="Logging verbosity level (overrides INVOICE_LOG_LEVEL env).",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode: show stacktraces on rule errors and force at least DEBUG logging.",
+    )
     args = parser.parse_args()
+
+    if args.log_level is not None:
+        set_log_level(args.log_level)
+    if args.debug and LOG_LEVEL < LOG_LEVELS["DEBUG"]:
+        set_log_level("DEBUG")
+
+    log_info("Starting rules engine…")
 
     csv_path = Path(args.csv)
 
-    # 1) Charger les règles
-    print("[INFO] Loading rules…", file=sys.stderr)
+    log_info("Loading rules…")
     rules = load_all_rules()
-    print(f"[INFO] {len(rules)} rules loaded.", file=sys.stderr)
     if not rules:
-        print("[WARN] No rules loaded. Exiting.", file=sys.stderr)
+        log_warn("No rules loaded. Exiting.")
         print("[]")
         sys.exit(0)
 
-    # 2) Charger UTBMS
-    print("[INFO] Loading UTBMS lookup…", file=sys.stderr)
+    log_info("Loading flags categories…")
+    categories = load_flags_categories()
+
+    log_info("Loading UTBMS lookup…")
     utbms_lookup = load_utbms_lookup()
-    print(f"[INFO] {len(utbms_lookup)} UTBMS codes loaded.", file=sys.stderr)
 
-    # 3) Charger les lignes globales (historique complet)
-    print("[INFO] Loading global invoice lines…", file=sys.stderr)
+    log_info("Loading global invoice lines…")
     global_lines = load_global_invoice_lines(utbms_lookup)
-    print(f"[INFO] {len(global_lines)} global invoice lines loaded.", file=sys.stderr)
+    log_info(f"{len(global_lines)} global invoice lines loaded.")
 
-    # 4) Charger les lignes du CSV ciblé (échantillon / une seule facture / une seule ligne)
-    print(f"[INFO] Loading lines from {csv_path}…", file=sys.stderr)
-    lines = load_lines_from_csv(csv_path, utbms_lookup)
-    print(f"[INFO] {len(lines)} lines loaded from CSV.", file=sys.stderr)
+    log_info(f"Loading custom lines from {csv_path}…")
+    custom_lines = load_lines_from_csv(csv_path, utbms_lookup, label="custom")
+    log_info(f"{len(custom_lines)} custom lines loaded from CSV.")
 
-    if not lines:
-        print("[WARN] No lines to process. Exiting.", file=sys.stderr)
-        print("[]")
-        sys.exit(0)
+    all_lines = build_all_lines_context(global_lines, custom_lines)
 
-    # 5) Construire ALL_LINES = historique + invoices_to_check (1 ligne par KID)
-    all_context_lines = build_all_context_lines(global_lines, lines)
-    print(f"[INFO] ALL_LINES context size: {len(all_context_lines)}", file=sys.stderr)
-
-    # 6) Appliquer les règles par facture (structure imbriquée)
-    nested_results = apply_rules_to_invoices_from_lines(
-        lines,
-        rules,
-        all_context_lines,
-        debug=args.debug,
+    # Par défaut en CLI: uniquement STRUCTURED (narrative_runner=None)
+    results = run_engine_on_custom_lines(
+        custom_lines=custom_lines,
+        rules=rules,
+        all_lines_context=all_lines,
+        debug_errors=args.debug,
+        flags_categories=categories,
+        narrative_runner=None,
     )
 
-    # 7) Aplatir : une entrée par KID avec la liste des flags appliqués
-    flat_results = flatten_results_per_line(nested_results)
-
-    # 8) Sortie JSON compacte
-    print(json.dumps(flat_results, indent=2))
+    print(json.dumps(results, indent=2))
 
 
 if __name__ == "__main__":

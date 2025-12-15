@@ -1,0 +1,316 @@
+{
+  "rule_code": "CMC",
+  "version": 1,
+  "generated_from": {
+    "function_name": "rule_cmc",
+    "rendered_prompt_file": "C:\\Invoice_compliance\\rule_tests\\prompts\\rendered\\CMC.final_prompt.txt",
+    "model": "gpt-5.1"
+  },
+  "cases": [
+    {
+      "id": "pos_cross_matter_same_invoice",
+      "description": "Flags when same timekeeper same date same UTBMS across different matters on same invoice",
+      "target_rule_codes": [
+        "CMC"
+      ],
+      "lines": [
+        {
+          "KID": "K1",
+          "INVOICE_NUMBER": "INV100",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK1",
+          "LINE_ITEM_DATE": "2025-01-10",
+          "UTBMS_CODE": "L110",
+          "LAW_FIRM_MATTER_ID": "MAT1",
+          "ALL_LINES": []
+        },
+        {
+          "KID": "K2",
+          "INVOICE_NUMBER": "INV100",
+          "LINE_ITEM_NUMBER": "2",
+          "TIMEKEEPER_ID": "TK1",
+          "LINE_ITEM_DATE": "2025-01-10",
+          "UTBMS_CODE": "L110",
+          "LAW_FIRM_MATTER_ID": "MAT2",
+          "ALL_LINES": []
+        }
+      ],
+      "all_lines": [
+        {
+          "KID": "K1",
+          "INVOICE_NUMBER": "INV100",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK1",
+          "LINE_ITEM_DATE": "2025-01-10",
+          "UTBMS_CODE": "L110",
+          "LAW_FIRM_MATTER_ID": "MAT1"
+        },
+        {
+          "KID": "K2",
+          "INVOICE_NUMBER": "INV100",
+          "LINE_ITEM_NUMBER": "2",
+          "TIMEKEEPER_ID": "TK1",
+          "LINE_ITEM_DATE": "2025-01-10",
+          "UTBMS_CODE": "L110",
+          "LAW_FIRM_MATTER_ID": "MAT2"
+        }
+      ],
+      "expected_by_kid": {
+        "K1": [
+          "CMC"
+        ],
+        "K2": [
+          "CMC"
+        ]
+      }
+    },
+    {
+      "id": "pos_cross_invoice_same_matter",
+      "description": "Flags when same timekeeper same date same UTBMS across different invoices for same matter",
+      "target_rule_codes": [
+        "CMC"
+      ],
+      "lines": [
+        {
+          "KID": "K3",
+          "INVOICE_NUMBER": "INV200",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK2",
+          "LINE_ITEM_DATE": "2025-02-01",
+          "UTBMS_CODE": "L200",
+          "LAW_FIRM_MATTER_ID": "MAT3",
+          "ALL_LINES": []
+        },
+        {
+          "KID": "K4",
+          "INVOICE_NUMBER": "INV201",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK2",
+          "LINE_ITEM_DATE": "2025-02-01",
+          "UTBMS_CODE": "L200",
+          "LAW_FIRM_MATTER_ID": "MAT3",
+          "ALL_LINES": []
+        }
+      ],
+      "all_lines": [
+        {
+          "KID": "K3",
+          "INVOICE_NUMBER": "INV200",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK2",
+          "LINE_ITEM_DATE": "2025-02-01",
+          "UTBMS_CODE": "L200",
+          "LAW_FIRM_MATTER_ID": "MAT3"
+        },
+        {
+          "KID": "K4",
+          "INVOICE_NUMBER": "INV201",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK2",
+          "LINE_ITEM_DATE": "2025-02-01",
+          "UTBMS_CODE": "L200",
+          "LAW_FIRM_MATTER_ID": "MAT3"
+        }
+      ],
+      "expected_by_kid": {
+        "K3": [
+          "CMC"
+        ],
+        "K4": [
+          "CMC"
+        ]
+      }
+    },
+    {
+      "id": "neg_same_matter_same_invoice",
+      "description": "Does not flag when same timekeeper same date same UTBMS but same matter and invoice",
+      "target_rule_codes": [
+        "CMC"
+      ],
+      "lines": [
+        {
+          "KID": "K5",
+          "INVOICE_NUMBER": "INV300",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK3",
+          "LINE_ITEM_DATE": "2025-03-10",
+          "UTBMS_CODE": "L300",
+          "LAW_FIRM_MATTER_ID": "MAT4",
+          "ALL_LINES": []
+        },
+        {
+          "KID": "K6",
+          "INVOICE_NUMBER": "INV300",
+          "LINE_ITEM_NUMBER": "2",
+          "TIMEKEEPER_ID": "TK3",
+          "LINE_ITEM_DATE": "2025-03-10",
+          "UTBMS_CODE": "L300",
+          "LAW_FIRM_MATTER_ID": "MAT4",
+          "ALL_LINES": []
+        }
+      ],
+      "all_lines": [
+        {
+          "KID": "K5",
+          "INVOICE_NUMBER": "INV300",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK3",
+          "LINE_ITEM_DATE": "2025-03-10",
+          "UTBMS_CODE": "L300",
+          "LAW_FIRM_MATTER_ID": "MAT4"
+        },
+        {
+          "KID": "K6",
+          "INVOICE_NUMBER": "INV300",
+          "LINE_ITEM_NUMBER": "2",
+          "TIMEKEEPER_ID": "TK3",
+          "LINE_ITEM_DATE": "2025-03-10",
+          "UTBMS_CODE": "L300",
+          "LAW_FIRM_MATTER_ID": "MAT4"
+        }
+      ],
+      "expected_by_kid": {
+        "K5": [],
+        "K6": []
+      }
+    },
+    {
+      "id": "neg_near_miss_diff_utbms",
+      "description": "Does not flag when UTBMS differs even if same timekeeper date and matter",
+      "target_rule_codes": [
+        "CMC"
+      ],
+      "lines": [
+        {
+          "KID": "K7",
+          "INVOICE_NUMBER": "INV400",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK4",
+          "LINE_ITEM_DATE": "2025-04-01",
+          "UTBMS_CODE": "L400",
+          "LAW_FIRM_MATTER_ID": "MAT5",
+          "ALL_LINES": []
+        },
+        {
+          "KID": "K8",
+          "INVOICE_NUMBER": "INV401",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK4",
+          "LINE_ITEM_DATE": "2025-04-01",
+          "UTBMS_CODE": "L401",
+          "LAW_FIRM_MATTER_ID": "MAT6",
+          "ALL_LINES": []
+        }
+      ],
+      "all_lines": [
+        {
+          "KID": "K7",
+          "INVOICE_NUMBER": "INV400",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK4",
+          "LINE_ITEM_DATE": "2025-04-01",
+          "UTBMS_CODE": "L400",
+          "LAW_FIRM_MATTER_ID": "MAT5"
+        },
+        {
+          "KID": "K8",
+          "INVOICE_NUMBER": "INV401",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK4",
+          "LINE_ITEM_DATE": "2025-04-01",
+          "UTBMS_CODE": "L401",
+          "LAW_FIRM_MATTER_ID": "MAT6"
+        }
+      ],
+      "expected_by_kid": {
+        "K7": [],
+        "K8": []
+      }
+    },
+    {
+      "id": "edge_missing_required_fields",
+      "description": "Returns None when required fields like UTBMS or date are missing or blank",
+      "target_rule_codes": [
+        "CMC"
+      ],
+      "lines": [
+        {
+          "KID": "K9",
+          "INVOICE_NUMBER": "INV500",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK5",
+          "LINE_ITEM_DATE": "",
+          "UTBMS_CODE": "L500",
+          "LAW_FIRM_MATTER_ID": "MAT7",
+          "ALL_LINES": []
+        },
+        {
+          "KID": "K10",
+          "INVOICE_NUMBER": "INV501",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK5",
+          "LINE_ITEM_DATE": "2025-05-01",
+          "UTBMS_CODE": "",
+          "LAW_FIRM_MATTER_ID": "MAT8",
+          "ALL_LINES": []
+        }
+      ],
+      "all_lines": [
+        {
+          "KID": "K9",
+          "INVOICE_NUMBER": "INV500",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK5",
+          "LINE_ITEM_DATE": "",
+          "UTBMS_CODE": "L500",
+          "LAW_FIRM_MATTER_ID": "MAT7"
+        },
+        {
+          "KID": "K10",
+          "INVOICE_NUMBER": "INV501",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK5",
+          "LINE_ITEM_DATE": "2025-05-01",
+          "UTBMS_CODE": "",
+          "LAW_FIRM_MATTER_ID": "MAT8"
+        }
+      ],
+      "expected_by_kid": {
+        "K9": [],
+        "K10": []
+      }
+    },
+    {
+      "id": "edge_no_all_lines_context",
+      "description": "Returns None when ALL_LINES is missing or empty",
+      "target_rule_codes": [
+        "CMC"
+      ],
+      "lines": [
+        {
+          "KID": "K11",
+          "INVOICE_NUMBER": "INV600",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK6",
+          "LINE_ITEM_DATE": "2025-06-15",
+          "UTBMS_CODE": "L600",
+          "LAW_FIRM_MATTER_ID": "MAT9"
+        },
+        {
+          "KID": "K12",
+          "INVOICE_NUMBER": "INV601",
+          "LINE_ITEM_NUMBER": "1",
+          "TIMEKEEPER_ID": "TK6",
+          "LINE_ITEM_DATE": "2025-06-15",
+          "UTBMS_CODE": "L600",
+          "LAW_FIRM_MATTER_ID": "MAT10",
+          "ALL_LINES": []
+        }
+      ],
+      "expected_by_kid": {
+        "K11": [],
+        "K12": []
+      }
+    }
+  ]
+}

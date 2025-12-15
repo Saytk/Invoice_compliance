@@ -1,0 +1,44 @@
+[FAIL] Rule CMC
+Reason: No fenced code block AND '@rule(' not found in whole response
+
+===== RAW CONTENT =====
+python
+@rule("CMC", penalty=0.3333, desc="Timekeeper records time for handling substantially the same task in the same time frame in two or more separate matters or invoices.", version=1)
+def rule_cmc(line) -> RuleResult | None:
+    all_lines = line.get("ALL_LINES")
+    if not all_lines:
+        return None
+    tk = line.get("TIMEKEEPER_ID")
+    date = line.get("LINE_ITEM_DATE")
+    desc = line.get("LINE_ITEM_DESCRIPTION", "").strip()
+    utbms = line.get("UTBMS_CODE", "").strip()
+    inv = line.get("INVOICE_NUMBER")
+    matter = line.get("LAW_FIRM_MATTER_ID")
+    if not tk or not date:
+        return None
+    for other in all_lines:
+        if other.get("KID") == line.get("KID"):
+            continue
+        if other.get("TIMEKEEPER_ID") != tk:
+            continue
+        if other.get("LINE_ITEM_DATE") != date:
+            continue
+        if other.get("LAW_FIRM_MATTER_ID") == matter and other.get("INVOICE_NUMBER") == inv:
+            continue
+        if utbms and utbms == other.get("UTBMS_CODE", "").strip():
+            msg = "Same timekeeper, date, and UTBMS on multiple matters/invoices"
+            meta = {
+                "other_KID": other.get("KID"),
+                "other_INVOICE_NUMBER": other.get("INVOICE_NUMBER"),
+                "other_MATTER_ID": other.get("LAW_FIRM_MATTER_ID"),
+            }
+            return RuleResult(True, "CMC", 0.3333, msg, score=None, meta=meta)
+        if desc and desc == other.get("LINE_ITEM_DESCRIPTION", "").strip():
+            msg = "Same timekeeper, date, and description on multiple matters/invoices"
+            meta = {
+                "other_KID": other.get("KID"),
+                "other_INVOICE_NUMBER": other.get("INVOICE_NUMBER"),
+                "other_MATTER_ID": other.get("LAW_FIRM_MATTER_ID"),
+            }
+            return RuleResult(True, "CMC", 0.3333, msg, score=None, meta=meta)
+    return None

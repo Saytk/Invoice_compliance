@@ -10,26 +10,17 @@ from tkinter import ttk, messagebox, filedialog
 
 import rules_engine as engine
 
-
 # ==========================
 #   MODE DEV / PROD
 # ==========================
-# Mets DEV_MODE = True pour activer la source "Custom (invoices_to_check.csv)"
 DEV_MODE = True
 
 
-def load_rules():
-    print("[CLIENT] Loading rules from rules_out/…", file=sys.stderr)
-    rules = engine.load_all_rules()
-    print(f"[CLIENT] {len(rules)} rules loaded.", file=sys.stderr)
-    return rules
-
+# ==========================
+#   Helpers locaux
+# ==========================
 
 def filter_rules(rules, selected_codes: list[str] | None):
-    """
-    Limite les règles à un sous-ensemble de codes (flags).
-    selected_codes: liste de codes (ex: ["CMC","BB"])
-    """
     if not selected_codes:
         return rules
 
@@ -43,95 +34,93 @@ def filter_rules(rules, selected_codes: list[str] | None):
         if code in wanted:
             filtered.append(r)
 
-    print(f"[CLIENT] Filtered rules: {len(filtered)} kept over {len(rules)}", file=sys.stderr)
+    engine.log_info(f"[CLIENT] Filtered rules: {len(filtered)} kept over {len(rules)}")
     if not filtered:
-        print("[CLIENT] WARNING: No rules match the requested codes.", file=sys.stderr)
+        engine.log_warn("[CLIENT] WARNING: No rules match the requested codes.")
 
     return filtered
 
+
+def group_lines_by_invoice(lines):
+    invoices = {}
+    for line in lines:
+        inv_no = str(line.get("INVOICE_NUMBER") or "").strip()
+        if inv_no not in invoices:
+            invoices[inv_no] = []
+        invoices[inv_no].append(line)
+    return invoices
+
+
+# ==========================
+#   GUI
+# ==========================
 
 def run_gui():
     root = tk.Tk()
     root.title("Invoice Compliance Client")
 
     # --------------------------------------------------
-    # Chargement backend
+    # Chargement backend via init_engine()
     # --------------------------------------------------
     try:
-        rules = load_rules()
-        utbms_lookup = engine.load_utbms_lookup()
-        global_lines = engine.load_global_invoice_lines(utbms_lookup)
+        engine.set_log_level("DEBUG")
+
+        # custom_csv uniquement en DEV_MODE
+        custom_csv = None
+        if DEV_MODE:
+            default_custom_csv = getattr(engine, "DEFAULT_CSV", None)
+            if default_custom_csv is None:
+                default_custom_csv = Path(__file__).resolve().parent / "invoices_to_check.csv"
+            else:
+                default_custom_csv = Path(default_custom_csv)
+
+            if default_custom_csv.exists():
+                custom_csv = default_custom_csv
+            else:
+                engine.log_info(f"[CLIENT] No invoices_to_check.csv found at {default_custom_csv} (dev custom disabled).")
+
+        ctx = engine.init_engine(custom_csv=custom_csv, log_level="INFO", debug=False)
+
+        rules = ctx["rules"]
+        global_lines = ctx["global_lines"]
+        custom_lines = ctx["custom_lines"]
+        all_lines = ctx["all_lines"]
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to initialize client:\n{e}")
         root.destroy()
         return
 
-    if not global_lines:
-        messagebox.showwarning("No Data", "No global invoice lines found in data/invoices.csv.")
+    if not global_lines and not custom_lines:
+        messagebox.showwarning(
+            "No Data",
+            "No invoice lines found in data/invoices.csv or invoices_to_check.csv.",
+        )
         root.destroy()
         return
 
-    # Groupement par facture (dataset global)
-    global_invoices_map = engine.group_lines_by_invoice(global_lines)
-
-    # Dataset custom (invoices_to_check.csv) — seulement en DEV
-    custom_lines: list[dict] = []
-    custom_invoices_map: dict[str, list[dict]] = {}
-
-    if DEV_MODE:
-        try:
-            # On récupère le chemin par défaut depuis rules_engine si possible
-            DEFAULT_CSV = getattr(engine, "DEFAULT_CSV", None)
-            if DEFAULT_CSV is None:
-                # fallback : même logique que dans rules_engine
-                ROOT = Path(__file__).resolve().parent
-                DEFAULT_CSV = ROOT / "invoices_to_check.csv"
-            else:
-                DEFAULT_CSV = Path(DEFAULT_CSV)
-
-            if DEFAULT_CSV.exists():
-                print(f"[CLIENT] Loading custom invoice lines from {DEFAULT_CSV}…", file=sys.stderr)
-                custom_lines = engine.load_lines_from_csv(DEFAULT_CSV, utbms_lookup)
-                custom_invoices_map = engine.group_lines_by_invoice(custom_lines)
-                print(f"[CLIENT] Loaded {len(custom_lines)} custom lines.", file=sys.stderr)
-            else:
-                print(f"[CLIENT] No invoices_to_check.csv found at {DEFAULT_CSV} (dev custom disabled).", file=sys.stderr)
-        except Exception as e:
-            print(f"[CLIENT] Failed to load custom invoices_to_check.csv: {e}", file=sys.stderr)
-            custom_lines = []
-            custom_invoices_map = {}
+    # Groupement par facture
+    global_invoices_map = group_lines_by_invoice(global_lines)
+    custom_invoices_map = group_lines_by_invoice(custom_lines) if custom_lines else {}
 
     # Infos règles (pour affichage flags)
     rules_info = []
     for r in rules:
-        code = getattr(r, "_rule_code", r.__name__)
-        desc = getattr(r, "_rule_desc", "")
-        version = getattr(r, "_rule_version", "")
-        penalty = getattr(r, "_rule_penalty", "")
         rules_info.append({
-            "code": code,
-            "desc": desc,
-            "version": version,
-            "penalty": penalty,
+            "code": getattr(r, "_rule_code", r.__name__),
+            "desc": getattr(r, "_rule_desc", ""),
+            "version": getattr(r, "_rule_version", ""),
+            "penalty": getattr(r, "_rule_penalty", None),
             "func": r,
         })
 
-    # Pour mémoriser les derniers résultats (Save JSON + Debug)
-    last_results = {
-        "flat": None,
-        "nested": None,
-        "sample_lines": None,
-        "source": None,
-    }
+    # Derniers résultats (Save JSON + Debug)
+    last_results = {"flat": None, "nested": None, "sample_lines": None, "source": None}
 
-    # Source courante : "global" ou "custom" (si dispo)
+    # Source courante
     source_var = tk.StringVar(value="global")
 
     def current_dataset():
-        """
-        Retourne (lines, invoices_map, label_source)
-        selon la source sélectionnée.
-        """
         src = source_var.get()
         if src == "custom" and DEV_MODE and custom_lines:
             return custom_lines, custom_invoices_map, "custom"
@@ -148,18 +137,15 @@ def run_gui():
     title_lbl = ttk.Label(root, text="Invoice Compliance Client", font=("Segoe UI", 14, "bold"))
     title_lbl.grid(row=0, column=0, columnspan=3, pady=8)
 
-    # --- FRAME MODE (global / custom) uniquement si DEV && custom_lines ---
+    # Mode global/custom
     if DEV_MODE and custom_lines:
         mode_frame = ttk.Frame(root, padding=(5, 0))
         mode_frame.grid(row=1, column=0, columnspan=3, sticky="w")
 
         ttk.Label(mode_frame, text="Data source:").grid(row=0, column=0, padx=(0, 5))
-        rb_global = ttk.Radiobutton(mode_frame, text="Global (data/invoices.csv)", value="global", variable=source_var)
-        rb_global.grid(row=0, column=1, padx=(0, 5))
-        rb_custom = ttk.Radiobutton(mode_frame, text="Custom (invoices_to_check.csv)", value="custom", variable=source_var)
-        rb_custom.grid(row=0, column=2, padx=(0, 5))
+        ttk.Radiobutton(mode_frame, text="Global (data/invoices.csv)", value="global", variable=source_var).grid(row=0, column=1, padx=(0, 5))
+        ttk.Radiobutton(mode_frame, text="Custom (invoices_to_check.csv)", value="custom", variable=source_var).grid(row=0, column=2, padx=(0, 5))
     else:
-        # occupe quand même la ligne pour la grille
         spacer = ttk.Frame(root, height=5)
         spacer.grid(row=1, column=0, columnspan=3, sticky="ew")
 
@@ -212,15 +198,19 @@ def run_gui():
     flags_vars: dict[str, tk.BooleanVar] = {}
 
     for info in rules_info:
-        code = info["code"]
+        code = str(info["code"])
         penalty = info["penalty"]
         var = tk.BooleanVar(value=False)
         flags_vars[code] = var
-        text = f"{code} (pen={penalty})"
-        cb = ttk.Checkbutton(flags_inner, text=text, variable=var)
+
+        pen_txt = ""
+        if penalty not in (None, "", "None"):
+            pen_txt = f" (pen={penalty})"
+
+        cb = ttk.Checkbutton(flags_inner, text=f"{code}{pen_txt}", variable=var)
         cb.pack(anchor="w", padx=2, pady=1)
 
-    def _on_flags_configure(event):
+    def _on_flags_configure(_event):
         flags_canvas.configure(scrollregion=flags_canvas.bbox("all"))
 
     flags_inner.bind("<Configure>", _on_flags_configure)
@@ -247,7 +237,7 @@ def run_gui():
     notebook.grid(row=1, column=0, sticky="nsew")
     frame_bottom.rowconfigure(1, weight=1)
 
-    # Onglet Results
+    # Results
     frame_results = ttk.Frame(notebook)
     notebook.add(frame_results, text="Results")
     frame_results.rowconfigure(0, weight=1)
@@ -255,11 +245,9 @@ def run_gui():
 
     results_text = tk.Text(frame_results, height=12, wrap="none")
     results_text.grid(row=0, column=0, sticky="nsew")
-    res_scroll_y = ttk.Scrollbar(frame_results, orient="vertical", command=results_text.yview)
-    res_scroll_y.grid(row=0, column=1, sticky="ns")
-    results_text.configure(yscrollcommand=res_scroll_y.set)
+    ttk.Scrollbar(frame_results, orient="vertical", command=results_text.yview).grid(row=0, column=1, sticky="ns")
 
-    # Onglet Logs
+    # Logs
     frame_logs = ttk.Frame(notebook)
     notebook.add(frame_logs, text="Logs")
     frame_logs.rowconfigure(0, weight=1)
@@ -267,11 +255,9 @@ def run_gui():
 
     logs_text = tk.Text(frame_logs, height=12, wrap="none")
     logs_text.grid(row=0, column=0, sticky="nsew")
-    logs_scroll_y = ttk.Scrollbar(frame_logs, orient="vertical", command=logs_text.yview)
-    logs_scroll_y.grid(row=0, column=1, sticky="ns")
-    logs_text.configure(yscrollcommand=logs_scroll_y.set)
+    ttk.Scrollbar(frame_logs, orient="vertical", command=logs_text.yview).grid(row=0, column=1, sticky="ns")
 
-    # Onglet Debug
+    # Debug
     frame_debug = ttk.Frame(notebook)
     notebook.add(frame_debug, text="Debug")
     frame_debug.rowconfigure(0, weight=1)
@@ -279,11 +265,8 @@ def run_gui():
 
     debug_text = tk.Text(frame_debug, height=12, wrap="none")
     debug_text.grid(row=0, column=0, sticky="nsew")
-    dbg_scroll_y = ttk.Scrollbar(frame_debug, orient="vertical", command=debug_text.yview)
-    dbg_scroll_y.grid(row=0, column=1, sticky="ns")
-    debug_text.configure(yscrollcommand=dbg_scroll_y.set)
+    ttk.Scrollbar(frame_debug, orient="vertical", command=debug_text.yview).grid(row=0, column=1, sticky="ns")
 
-    # Utilitaires texte
     def append_logs(text: str):
         if not text:
             return
@@ -291,35 +274,25 @@ def run_gui():
         logs_text.see("end")
 
     # --------------------------------------------------
-    # Logique de mise à jour des listes
+    # Lists update
     # --------------------------------------------------
     def refresh_invoices_listbox(*_args):
-        """
-        Remplit la liste des factures en fonction de la source (global/custom).
-        """
         invoices_listbox.delete(0, tk.END)
-        lines, inv_map, src = current_dataset()
+        _, inv_map, src = current_dataset()
 
         lbl_text = "Invoices (INVOICE_NUMBER)"
         if src == "custom":
             lbl_text += "  [CUSTOM]"
         lbl_invoices.configure(text=lbl_text)
 
-        # inv_map : invoice_number -> list[lines]
         for inv_no, lines_for_inv in sorted(inv_map.items(), key=lambda kv: kv[0]):
-            label = f"{inv_no}  ({len(lines_for_inv)} lines)"
-            invoices_listbox.insert(tk.END, label)
+            invoices_listbox.insert(tk.END, f"{inv_no}  ({len(lines_for_inv)} lines)")
 
-        # On vide aussi les KIDs
         kids_listbox.delete(0, tk.END)
 
-    def update_kids_listbox(event=None):
-        """
-        Remplit la liste des KID en fonction des factures sélectionnées et de la source.
-        """
+    def update_kids_listbox(_event=None):
         kids_listbox.delete(0, tk.END)
-
-        lines, inv_map, src = current_dataset()
+        _, inv_map, _src = current_dataset()
 
         selected_indices = list(invoices_listbox.curselection())
         if not selected_indices:
@@ -333,98 +306,59 @@ def run_gui():
 
         seen_kids = set()
         for inv_no in selected_invoices:
-            lines_for_inv = inv_map.get(inv_no, [])
-            for ln in lines_for_inv:
+            for ln in inv_map.get(inv_no, []):
                 kid = str(ln.get("KID") or "").strip()
                 desc = str(ln.get("LINE_ITEM_DESCRIPTION") or "").strip()
-                if not kid:
-                    continue
-                if kid in seen_kids:
+                if not kid or kid in seen_kids:
                     continue
                 seen_kids.add(kid)
-                display = f"{kid} | {inv_no} | {desc[:60]}"
-                kids_listbox.insert(tk.END, display)
+                kids_listbox.insert(tk.END, f"{kid} | {inv_no} | {desc[:60]}")
 
     invoices_listbox.bind("<<ListboxSelect>>", update_kids_listbox)
 
-    # Si on change de source (global/custom), on refresh tout
     def on_source_changed(*_args):
         refresh_invoices_listbox()
 
     source_var.trace_add("write", on_source_changed)
-
-    # Premier remplissage
     refresh_invoices_listbox()
 
     # --------------------------------------------------
-    # Sélection des règles et des lignes à vérifier
+    # Selection helpers
     # --------------------------------------------------
     def get_selected_rules():
         selected_codes = [code for code, var in flags_vars.items() if var.get()]
         if not selected_codes:
-            return rules  # aucune sélection -> toutes les règles
+            return rules
         return filter_rules(rules, selected_codes)
 
     def get_selected_sample_lines():
-        """
-        Retourne les lignes à vérifier, en fonction de :
-          - la source (global/custom)
-          - la sélection d'invoices
-          - la sélection de KID
+        lines, _inv_map, src = current_dataset()
 
-        Logique :
-          - si des KID sont sélectionnés : on vérifie uniquement ces KID
-          - sinon, si des factures sont sélectionnées : toutes les lignes de ces factures
-          - sinon : toutes les lignes de la source courante
-        """
-        lines, inv_map, src = current_dataset()
-
-        # Factures sélectionnées
         selected_invoices = set()
         for idx in invoices_listbox.curselection():
-            label = invoices_listbox.get(idx)
-            inv_no = label.split()[0]
+            inv_no = invoices_listbox.get(idx).split()[0]
             selected_invoices.add(inv_no)
 
-        # KIDs sélectionnés
         selected_kids = set()
         for idx in kids_listbox.curselection():
-            label = kids_listbox.get(idx)
-            kid = label.split("|")[0].strip()
+            kid = kids_listbox.get(idx).split("|")[0].strip()
             selected_kids.add(kid)
 
-        sample_lines: list[dict] = []
-
-        # 1) Si des KID sont sélectionnés → on ne garde que ces KID
         if selected_kids:
-            for ln in lines:
-                kid = str(ln.get("KID") or "").strip()
-                if kid in selected_kids:
-                    sample_lines.append(ln)
-            return sample_lines, src
+            return [ln for ln in lines if str(ln.get("KID") or "").strip() in selected_kids], src
 
-        # 2) Sinon, si des factures sont sélectionnées → lignes de ces factures
         if selected_invoices:
-            for ln in lines:
-                inv = str(ln.get("INVOICE_NUMBER") or "").strip()
-                if inv in selected_invoices:
-                    sample_lines.append(ln)
-            return sample_lines, src
+            return [ln for ln in lines if str(ln.get("INVOICE_NUMBER") or "").strip() in selected_invoices], src
 
-        # 3) Rien sélectionné → toutes les lignes de la source courante
         return list(lines), src
 
     # --------------------------------------------------
-    # Run rules + mise à jour des 3 onglets
+    # Run rules
     # --------------------------------------------------
     def run_rules():
-        # On nettoie les résultats ; on garde les logs accumulés
         results_text.delete("1.0", tk.END)
         debug_text.delete("1.0", tk.END)
-        last_results["flat"] = None
-        last_results["nested"] = None
-        last_results["sample_lines"] = None
-        last_results["source"] = None
+        last_results.update({"flat": None, "nested": None, "sample_lines": None, "source": None})
 
         try:
             buf_out = io.StringIO()
@@ -441,29 +375,36 @@ def run_gui():
                     print("[CLIENT] WARNING: No invoice lines selected in source:", src)
                     return
 
-                # Contexte : on se rapproche de rules_engine
-                # global_lines = toujours le dataset principal (contexte "réel")
-                all_context_lines = engine.build_all_context_lines(global_lines, sample_lines)
+                flat_results = []
+                for ln in sample_lines:
+                    ln_with_ctx = dict(ln)
+                    ln_with_ctx["ALL_LINES"] = all_lines
 
-                nested_results = engine.apply_rules_to_invoices_from_lines(
-                    sample_lines,
-                    active_rules,
-                    all_context_lines,
-                    debug=False,
-                )
-                flat_results = engine.flatten_results_per_line(nested_results)
+                    flags = engine.apply_rules_to_line(
+                        ln_with_ctx,
+                        active_rules,
+                        debug_errors=False,
+                    )
 
-            # Logs
-            logs_text_run = buf_out.getvalue() + buf_err.getvalue()
-            append_logs(logs_text_run)
+                    flat_results.append({
+                        "KID": ln.get("KID"),
+                        "INVOICE_NUMBER": ln.get("INVOICE_NUMBER"),
+                        "LINE_ITEM_NUMBER": ln.get("LINE_ITEM_NUMBER"),
+                        "LAW_FIRM_MATTER_ID": ln.get("LAW_FIRM_MATTER_ID"),
+                        "flags": flags if flags else [],
+                    })
 
-            # Mémorisation pour Save JSON + Debug
-            last_results["flat"] = flat_results
-            last_results["nested"] = nested_results
-            last_results["sample_lines"] = sample_lines
-            last_results["source"] = src
+                nested_results = flat_results
 
-            # ---- Onglet Results (vue lisible) ----
+            append_logs(buf_out.getvalue() + buf_err.getvalue())
+
+            last_results.update({
+                "flat": flat_results,
+                "nested": nested_results,
+                "sample_lines": sample_lines,
+                "source": src,
+            })
+
             if not flat_results:
                 results_text.insert("1.0", "No flags triggered for selected lines.\n")
             else:
@@ -475,43 +416,30 @@ def run_gui():
                     flags = line_result.get("flags", [])
 
                     codes = [f.get("code") for f in flags if f.get("code")]
-                    if codes:
-                        codes_str = ", ".join(codes)
-                    else:
-                        codes_str = "None"
-
-                    header = f"KID {kid} (Invoice {inv}, Matter {lf_matter}) → Flags: [{codes_str}]"
-                    lines_out.append(header)
+                    codes_str = ", ".join(codes) if codes else "None"
+                    lines_out.append(f"KID {kid} (Invoice {inv}, Matter {lf_matter}) → Flags: [{codes_str}]")
 
                     for f in flags:
-                        code = f.get("code")
-                        msg = f.get("message")
-                        lines_out.append(f"   - {code}: {msg}")
+                        lines_out.append(f"   - {f.get('code')}: {f.get('message')}")
 
                     lines_out.append("")
 
                 results_text.insert("1.0", "\n".join(lines_out))
 
-            # ---- Onglet Debug ----
             dbg_lines: list[str] = []
-            dbg_lines.append(f"Source used: {src}")
-            dbg_lines.append("")
+            dbg_lines.append(f"Source used: {src}\n")
             dbg_lines.append("Sample lines:")
             for ln in sample_lines:
-                kid = ln.get("KID")
-                inv = ln.get("INVOICE_NUMBER")
-                desc = (ln.get("LINE_ITEM_DESCRIPTION") or "").strip()
-                dbg_lines.append(f" - KID={kid}, INV={inv}, DESC={desc[:80]}")
-            dbg_lines.append("")
-            dbg_lines.append("Nested results (per invoice/line):")
+                dbg_lines.append(
+                    f" - KID={ln.get('KID')}, INV={ln.get('INVOICE_NUMBER')}, DESC={(ln.get('LINE_ITEM_DESCRIPTION') or '')[:80]}"
+                )
+            dbg_lines.append("\nFlat / nested results (per line):")
             try:
                 dbg_lines.append(json.dumps(nested_results, indent=2, default=str))
             except Exception:
                 dbg_lines.append(repr(nested_results))
 
             debug_text.insert("1.0", "\n".join(dbg_lines))
-
-            # On se met automatiquement sur Results
             notebook.select(frame_results)
 
         except Exception as e:
@@ -541,10 +469,7 @@ def run_gui():
         results_text.delete("1.0", tk.END)
         logs_text.delete("1.0", tk.END)
         debug_text.delete("1.0", tk.END)
-        last_results["flat"] = None
-        last_results["nested"] = None
-        last_results["sample_lines"] = None
-        last_results["source"] = None
+        last_results.update({"flat": None, "nested": None, "sample_lines": None, "source": None})
 
     run_btn.configure(command=run_rules)
     save_btn.configure(command=save_json)
