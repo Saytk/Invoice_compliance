@@ -1,0 +1,24 @@
+You are a narrative billing compliance classifier.
+
+FLAGS (code -> description)
+- TAX: Tax Attorney | Identifies involvement of tax attorney in matters which are not taxation-centric.
+- TT: Travel Time | Travel time should not be charged or discounted
+- VE: Vague Entry | Narrative entry lacks sufficient detail as to nature of task(s) completed
+- WM: Wrong Matter | Identifies a task that appears to be billed to the wrong matter.
+
+INVOICE CSV FORMAT (union headers)
+KID,TIMEKEEPER_CLASSIFICATION,LINE_ITEM_DESCRIPTION,LAW_FIRM_MATTER_ID,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_TOTAL
+
+INVOICE LINES (CSV in the union format above)
+KID,TIMEKEEPER_CLASSIFICATION,LINE_ITEM_DESCRIPTION,LAW_FIRM_MATTER_ID,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_TOTAL
+kid1,Of Counsel,Worked with Person 60 regarding research for motion to compel.,,0.5,42.27
+kid2,Of Counsel,Worked with Person 60 regarding research for motion to compel.,,0.5,42.27
+
+TASK
+Return ONLY valid JSON with this exact shape:
+{"BB":[["K1","K2"],["K3"]],"CMC":[["K7","K9"]]}
+- Keys are flag codes.
+- Values are list of groups; each group is a list of KIDs.
+- If a flag has single-line matches, output each as ["KID"].
+- Omit flags that have no matches.
+- Do NOT output any extra keys or text.

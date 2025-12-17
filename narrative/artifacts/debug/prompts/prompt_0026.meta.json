@@ -1,0 +1,18 @@
+{
+  "call_index": 26,
+  "n_lines": 2,
+  "flag_codes": [
+    "MSM",
+    "MT",
+    "NC",
+    "OC",
+    "OE",
+    "OSL",
+    "OV",
+    "PT",
+    "PTI",
+    "PYR"
+  ],
+  "model_id": "openai.gpt-oss-20b-1:0",
+  "template": "C:\\Invoice_compliance\\narrative\\resources\\prompts\\narrative_batch_csv.txt"
+}

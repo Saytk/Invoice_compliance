@@ -1,0 +1,30 @@
+You are a narrative billing compliance classifier.
+
+FLAGS (code -> description)
+- ETD-OB: Embedded Time Discrepancy - Over Billing | The hours billed for the line is greater than the total of embedded time in the narrative.
+- ETD-UB: Embedded Time Discrepancy - Under Billing | The hours billed for the line is less than the total of embedded time in the narrative.
+- GRZ: Grazing | Senior timekeepers record hours when "shadowing" another partner or keeping abreast of matters without incremental value add to a client.
+- IB: Increment Billing | Tasks are separated and recorded in multiple time entries in one-tenth hour increments where task is unlikely to take 6 minutes (e.g., left voice message for client, reviewed three sentence e-mail)
+- IO: Insourcing Opportunity | Reflects recurring, low value/low risk work best redeploy to alternative lower cost provider.
+- IPT: Indistinguishable Prep Time | Timekeeper combines "preparation time and participation time" without specifying the type of preparatory task has been undertaken or time expended for it (e.g., prepare for and participate in all-hands conference call). Inflates time recorded for primary activity undertaken.
+- LCE: Local Counsel Engagement | Cost of interviewing and retention of local counsel where lead counsel strategically directs matter to a jurisdiction where it is unlicensed.
+- LOI: Legal Opinion Inflation | Multiple senior level attorneys record time for the preparation and review of a legal opinion.
+- MAC: Multiple Attorney Call | More than one timekeeper bills for same telephonic call without client pre-approval.
+- MS: Media Statement | Media Statements made by Outside Counsel on behalf of Client
+
+INVOICE CSV FORMAT (union headers)
+KID,LINE_ITEM_DESCRIPTION,LINE_ITEM_NUMBER_OF_UNITS,TIMEKEEPER_CLASSIFICATION,LINE_ITEM_DATE,TIMEKEEPER_ID,LAW_FIRM_MATTER_ID
+
+INVOICE LINES (CSV in the union format above)
+KID,LINE_ITEM_DESCRIPTION,LINE_ITEM_NUMBER_OF_UNITS,TIMEKEEPER_CLASSIFICATION,LINE_ITEM_DATE,TIMEKEEPER_ID,LAW_FIRM_MATTER_ID
+kid1,Worked with Person 60 regarding research for motion to compel.,0.5,Of Counsel,20241125,TK1,
+kid2,Worked with Person 60 regarding research for motion to compel.,0.5,Of Counsel,20241125,TK1,
+
+TASK
+Return ONLY valid JSON with this exact shape:
+{"BB":[["K1","K2"],["K3"]],"CMC":[["K7","K9"]]}
+- Keys are flag codes.
+- Values are list of groups; each group is a list of KIDs.
+- If a flag has single-line matches, output each as ["KID"].
+- Omit flags that have no matches.
+- Do NOT output any extra keys or text.

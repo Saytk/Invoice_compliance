@@ -1,0 +1,11 @@
+{
+  "call_index": 5,
+  "n_lines": 2,
+  "flag_codes": [
+    "TAX",
+    "TT",
+    "VE",
+    "WM"
+  ],
+  "model_id": "openai.gpt-oss-20b-1:0"
+}

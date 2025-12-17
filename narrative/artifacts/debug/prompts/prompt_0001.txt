@@ -1,0 +1,30 @@
+You are a narrative billing compliance classifier.
+
+FLAGS (code -> description)
+- ADM: Administrative Activities | Administrative functions (billing, scheduling, calendaring, filing) billed at attorney or other legal professional rates.
+- AT: Associate Training | Billing by junior legal personnel for activities where primary involvement by junior timekeeper pertains to his or her professional development and internal law firm training purposes.
+- BB: Block Billing | Lumping or aggregation of multiple tasks into a single narrative entry with a sum total of time instead of listing each task and the precise related time.
+- CF: Churning File | Timekeeper repeatedly undertakes seemingly legitimate tasks which adds marginal value for client (e.g., repeated updates of corporate minute book, checking dockets, updating form contracts).
+- CHP: Chipping | Less productive senior level timekeepers often serve as a "sounding board" burying small time charges within a larger matter.
+- CI: Communication Inspecificity | Outside counsel's time entries regarding electronic or telephonic communications should identify the subject matter of the communication and name the counterparty to it.
+- CMC: Cross Matter Churning | Timekeeper records time for handling substantially the same task in the same time frame in two or more separate matters or invoices.
+- ER: Excessive Research | Legal research occurs in an hourly amount in excess of client's guidelines for pre-approval.
+- ET: Excessive Time | Time for a repeated or routine task (e.g., first draft of form lease for multi-unit residential apartments, draft of UCC-1 ) exceeds industry norms for similarly experienced timekeepers.
+- ETD: Embedded Time Discrepancy | Discrepancies found with time notations embedded in line narratives.
+
+INVOICE CSV FORMAT (union headers)
+KID,LINE_ITEM_DESCRIPTION,TIMEKEEPER_CLASSIFICATION,TIMEKEEPER_ID,LAW_FIRM_MATTER_ID,LINE_ITEM_DATE,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_TASK_CODE,UTBMS_CATEGORY
+
+INVOICE LINES (CSV in the union format above)
+KID,LINE_ITEM_DESCRIPTION,TIMEKEEPER_CLASSIFICATION,TIMEKEEPER_ID,LAW_FIRM_MATTER_ID,LINE_ITEM_DATE,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_TASK_CODE,UTBMS_CATEGORY
+kid1,Worked with Person 60 regarding research for motion to compel.,Of Counsel,TK1,,20241125,0.5,L350,
+kid2,Worked with Person 60 regarding research for motion to compel.,Of Counsel,TK1,,20241125,0.5,L350,
+
+TASK
+Return ONLY valid JSON with this exact shape:
+{"BB":[["K1","K2"],["K3"]],"CMC":[["K7","K9"]]}
+- Keys are flag codes.
+- Values are list of groups; each group is a list of KIDs.
+- If a flag has single-line matches, output each as ["KID"].
+- Omit flags that have no matches.
+- Do NOT output any extra keys or text.

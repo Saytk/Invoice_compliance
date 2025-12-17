@@ -1,0 +1,702 @@
+Bonjour,
+
+Je souhaite créer une application de vérification de conformité de factures juridiques.
+
+L’application s’appuie sur trois fichiers principaux :
+
+1. Flags (règles de conformité à détecter)
+2. UTBMS (codes standardisés de tâches / activités)
+3. Invoices (lignes de facturation)
+
+Voici un échantillon de chacun de ces fichiers.
+
+------------------------------------------------------------
+1. FICHIER DES FLAGS
+------------------------------------------------------------
+
+GROUP NAME,FLAG ABBR,FLAG NAME,FLAG DESCRIPTION,FLAG PENALTY__
+Billing Hygiene,BB,Block Billing,Lumping or aggregation of multiple tasks into a single narrative entry with a sum total of time instead of listing each task and the precise related time.,27.50%
+
+------------------------------------------------------------
+2. FICHIER DES FACTURES (INVOICES)
+------------------------------------------------------------
+
+INVOICE_DATE,INVOICE_NUMBER,CLIENT_ID,LAW_FIRM_MATTER_ID,INVOICE_TOTAL,BILLING_START_DATE,BILLING_END_DATE,INVOICE_DESCRIPTION,LINE_ITEM_NUMBER,EXP/FEE/INV_ADJ_TYPE,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_ADJUSTMENT_AMOUNT,LINE_ITEM_TOTAL,LINE_ITEM_DATE,LINE_ITEM_TASK_CODE,LINE_ITEM_EXPENSE_CODE,LINE_ITEM_ACTIVITY_CODE,TIMEKEEPER_ID,LINE_ITEM_DESCRIPTION,LAW_FIRM_ID,LINE_ITEM_UNIT_COST,TIMEKEEPER_NAME,TIMEKEEPER_CLASSIFICATION,LAW_FIRM_NAME,CLIENT_NAME,RUNID,KID
+20241210,31714,,,,,,,66380721143,,0.1,,42.27,20241125,L350,,A101,,Worked with Person 60 regarding research for motion to compel.,,422.7,"Garza, Janet",Of Counsel,Schirrmeister Diaz-Arrastia Brem LLP,Client POC2,6638072A-92C9-4E7A-93B0-A2DF71796A12,FF82182B-7BA1-42A8-8F78-E58C7A603F84
+
+------------------------------------------------------------
+3. FICHIER UTBMS
+------------------------------------------------------------
+
+CATEGORY,SUBCATEGORY,CODE,DESCRIPTION
+Activity,General,A101,"Planning and strategizing for tasks, events, or proceedings."
+
+------------------------------------------------------------
+OBJECTIF DE L’APPLICATION
+------------------------------------------------------------
+
+Le but de l’application est de prendre une ligne de facture et de déterminer si un ou plusieurs flags s’appliquent à cette ligne.
+
+Une contrainte importante est que de nouveaux flags peuvent être ajoutés régulièrement.
+
+Pour cette raison, l’architecture doit permettre de :
+
+- générer automatiquement du code pour chaque nouveau flag,
+- appliquer des règles déterministes lorsque les critères sont objectifs,
+- traiter différemment les cas narratifs (texte libre) lorsque l’interprétation est nécessaire.
+
+------------------------------------------------------------
+SUITE
+------------------------------------------------------------
+
+Je vais maintenant transmettre :
+
+- l’architecture globale de l’application,
+- ainsi que le contenu détaillé de mes fichiers les plus importants.
+
+Merci de ne pas répondre tant que je ne t’aurai pas explicitement indiqué que j’ai terminé.
+
+------------------------------------------------------------
+ARCHITECTURE NARRATIVE
+------------------------------------------------------------
+
+Structure (fichiers + role court):
+- narrative/__init__.py: Package marker for narrative.
+- narrative/architecture_prompt/generate_architecture_prompt.py: Generator for this prompt (structure + contents).
+- narrative/architecture_prompt/intro.txt: Intro utilisateur a placer en tete du prompt final.
+- narrative/artifacts/__init__.py: Package marker for artifacts.
+- narrative/artifacts/sample_input/invoices_to_check.csv: Sample invoice CSV used for prompt tests.
+- narrative/core/__init__.py: Package marker for core logic.
+- narrative/core/narrative_llm.py: Batches lines/flags, renders prompts, calls app_utils.call_openai_responses_json, and aggregates KIDs per flag.
+- narrative/core/prompt_builder.py: CLI/helpers that render the narrative prompt from CSV lines, flag codes, and required fields.
+- narrative/core/required_fields.py: Loads required_fields.json, splits CSV vs ALL_LINES, computes union for selected flags.
+- narrative/core/schema.py: Placeholder for future schema definitions (empty).
+- narrative/resources/__init__.py: Package marker for resources.
+- narrative/resources/prompts/narrative_batch_csv.txt: Template with LLM instructions to group KIDs by flag from CSV.
+- narrative/resources/required_fields.json: Flag code -> required CSV columns mapping.
+
+Contenu des fichiers (ordre alphabetique):
+=== narrative/__init__.py ===
+
+
+=== narrative/architecture_prompt/generate_architecture_prompt.py ===
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Dict, Iterable, List, Tuple
+
+
+NARRATIVE_ROOT = Path(__file__).resolve().parents[1]
+THIS_DIR = Path(__file__).resolve().parent
+INTRO_PATH = THIS_DIR / "intro.txt"
+OUT_PATH = THIS_DIR / "narrative_architecture_prompt.txt"
+
+DESC_MAP: Dict[str, str] = {
+    "narrative/__init__.py": "Package marker for narrative.",
+    "narrative/artifacts/__init__.py": "Package marker for artifacts.",
+    "narrative/artifacts/sample_input/invoices_to_check.csv": "Sample invoice CSV used for prompt tests.",
+    "narrative/core/__init__.py": "Package marker for core logic.",
+    "narrative/core/schema.py": "Placeholder for future schema definitions (empty).",
+    "narrative/core/prompt_builder.py": "CLI/helpers that render the narrative prompt from CSV lines, flag codes, and required fields.",
+    "narrative/core/narrative_llm.py": "Batches lines/flags, renders prompts, calls app_utils.call_openai_responses_json, and aggregates KIDs per flag.",
+    "narrative/core/required_fields.py": "Loads required_fields.json, splits CSV vs ALL_LINES, computes union for selected flags.",
+    "narrative/resources/__init__.py": "Package marker for resources.",
+    "narrative/resources/required_fields.json": "Flag code -> required CSV columns mapping.",
+    "narrative/resources/prompts/narrative_batch_csv.txt": "Template with LLM instructions to group KIDs by flag from CSV.",
+    "narrative/architecture_prompt/generate_architecture_prompt.py": "Generator for this prompt (structure + contents).",
+    "narrative/architecture_prompt/intro.txt": "Intro utilisateur a placer en tete du prompt final.",
+}
+
+EXCLUDE_DIRS = {"__pycache__"}
+EXCLUDE_SUFFIXES = {".pyc"}
+EXCLUDE_FILES = {OUT_PATH}
+
+
+def iter_files() -> Iterable[Path]:
+    for p in sorted(NARRATIVE_ROOT.rglob("*")):
+        if p.is_dir():
+            if p.name in EXCLUDE_DIRS:
+                continue
+            continue
+        if p.suffix in EXCLUDE_SUFFIXES:
+            continue
+        if p in EXCLUDE_FILES:
+            continue
+        yield p
+
+
+def short_desc(rel_path: str) -> str:
+    return DESC_MAP.get(rel_path, "Fichier inclus dans narrative (contenu ci-dessous).")
+
+
+def read_file(path: Path) -> str:
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
+def build_prompt() -> str:
+    intro = INTRO_PATH.read_text(encoding="utf-8", errors="replace").strip()
+
+    entries: List[Tuple[str, str, str]] = []
+    for p in iter_files():
+        rel = p.relative_to(NARRATIVE_ROOT.parent).as_posix()
+        entries.append((rel, short_desc(rel), read_file(p)))
+
+    lines = [intro, "", "------------------------------------------------------------", "ARCHITECTURE NARRATIVE", "------------------------------------------------------------", "", "Structure (fichiers + role court):"]
+    for rel, desc, _content in entries:
+        lines.append(f"- {rel}: {desc}")
+
+    lines.append("")
+    lines.append("Contenu des fichiers (ordre alphabetique):")
+    for rel, _desc, content in entries:
+        lines.append(f"=== {rel} ===")
+        lines.append(content.rstrip())
+        lines.append("")
+
+    lines.append("Notes: prompt_builder.py depends on app_utils.call_openai_responses_json; sample data lives in artifacts/.")
+    return "\n".join(lines)
+
+
+def main() -> int:
+    THIS_DIR.mkdir(parents=True, exist_ok=True)
+
+    OUT_PATH.write_text(build_prompt(), encoding="utf-8")
+    print(f"[OK] Prompt written to: {OUT_PATH}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+=== narrative/architecture_prompt/intro.txt ===
+Bonjour,
+
+Je souhaite créer une application de vérification de conformité de factures juridiques.
+
+L’application s’appuie sur trois fichiers principaux :
+
+1. Flags (règles de conformité à détecter)
+2. UTBMS (codes standardisés de tâches / activités)
+3. Invoices (lignes de facturation)
+
+Voici un échantillon de chacun de ces fichiers.
+
+------------------------------------------------------------
+1. FICHIER DES FLAGS
+------------------------------------------------------------
+
+GROUP NAME,FLAG ABBR,FLAG NAME,FLAG DESCRIPTION,FLAG PENALTY__
+Billing Hygiene,BB,Block Billing,Lumping or aggregation of multiple tasks into a single narrative entry with a sum total of time instead of listing each task and the precise related time.,27.50%
+
+------------------------------------------------------------
+2. FICHIER DES FACTURES (INVOICES)
+------------------------------------------------------------
+
+INVOICE_DATE,INVOICE_NUMBER,CLIENT_ID,LAW_FIRM_MATTER_ID,INVOICE_TOTAL,BILLING_START_DATE,BILLING_END_DATE,INVOICE_DESCRIPTION,LINE_ITEM_NUMBER,EXP/FEE/INV_ADJ_TYPE,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_ADJUSTMENT_AMOUNT,LINE_ITEM_TOTAL,LINE_ITEM_DATE,LINE_ITEM_TASK_CODE,LINE_ITEM_EXPENSE_CODE,LINE_ITEM_ACTIVITY_CODE,TIMEKEEPER_ID,LINE_ITEM_DESCRIPTION,LAW_FIRM_ID,LINE_ITEM_UNIT_COST,TIMEKEEPER_NAME,TIMEKEEPER_CLASSIFICATION,LAW_FIRM_NAME,CLIENT_NAME,RUNID,KID
+20241210,31714,,,,,,,66380721143,,0.1,,42.27,20241125,L350,,A101,,Worked with Person 60 regarding research for motion to compel.,,422.7,"Garza, Janet",Of Counsel,Schirrmeister Diaz-Arrastia Brem LLP,Client POC2,6638072A-92C9-4E7A-93B0-A2DF71796A12,FF82182B-7BA1-42A8-8F78-E58C7A603F84
+
+------------------------------------------------------------
+3. FICHIER UTBMS
+------------------------------------------------------------
+
+CATEGORY,SUBCATEGORY,CODE,DESCRIPTION
+Activity,General,A101,"Planning and strategizing for tasks, events, or proceedings."
+
+------------------------------------------------------------
+OBJECTIF DE L’APPLICATION
+------------------------------------------------------------
+
+Le but de l’application est de prendre une ligne de facture et de déterminer si un ou plusieurs flags s’appliquent à cette ligne.
+
+Une contrainte importante est que de nouveaux flags peuvent être ajoutés régulièrement.
+
+Pour cette raison, l’architecture doit permettre de :
+
+- générer automatiquement du code pour chaque nouveau flag,
+- appliquer des règles déterministes lorsque les critères sont objectifs,
+- traiter différemment les cas narratifs (texte libre) lorsque l’interprétation est nécessaire.
+
+------------------------------------------------------------
+SUITE
+------------------------------------------------------------
+
+Je vais maintenant transmettre :
+
+- l’architecture globale de l’application,
+- ainsi que le contenu détaillé de mes fichiers les plus importants.
+
+Merci de ne pas répondre tant que je ne t’aurai pas explicitement indiqué que j’ai terminé.
+
+=== narrative/artifacts/__init__.py ===
+
+
+=== narrative/artifacts/sample_input/invoices_to_check.csv ===
+INVOICE_DATE,INVOICE_NUMBER,CLIENT_ID,LAW_FIRM_MATTER_ID,INVOICE_TOTAL,BILLING_START_DATE,BILLING_END_DATE,INVOICE_DESCRIPTION,LINE_ITEM_NUMBER,EXP/FEE/INV_ADJ_TYPE,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_ADJUSTMENT_AMOUNT,LINE_ITEM_TOTAL,LINE_ITEM_DATE,LINE_ITEM_TASK_CODE,LINE_ITEM_EXPENSE_CODE,LINE_ITEM_ACTIVITY_CODE,TIMEKEEPER_ID,LINE_ITEM_DESCRIPTION,LAW_FIRM_ID,LINE_ITEM_UNIT_COST,TIMEKEEPER_NAME,TIMEKEEPER_CLASSIFICATION,LAW_FIRM_NAME,CLIENT_NAME,RUNID,KID
+20241210,31714,,,,,,,1,,0.5,,42.27,20241125,L350,,A101,TK1,"Worked with Person 60 regarding research for motion to compel.",,422.7,"Garza, Janet",Of Counsel,Schirrmeister Diaz-Arrastia Brem LLP,Client POC2,run1,kid1
+20241210,99999,,,,,,,2,,0.5,,42.27,20241125,L350,,A101,TK1,"Worked with Person 60 regarding research for motion to compel.",,422.7,"Garza, Janet",Of Counsel,Schirrmeister Diaz-Arrastia Brem LLP,Client POC2,run1,kid2
+
+=== narrative/core/__init__.py ===
+
+
+=== narrative/core/narrative_llm.py ===
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+from typing import Any, Dict, Iterable, List
+
+CURRENT_FILE = Path(__file__).resolve()
+CORE_DIR = CURRENT_FILE.parent
+NARRATIVE_ROOT = CORE_DIR.parent
+PROJECT_ROOT = CORE_DIR.parents[1]
+
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+
+# ============================================================
+# Local helpers (avoid missing imports from app_utils)
+# ============================================================
+def chunk(items: List[Any], n: int) -> Iterable[List[Any]]:
+    if n <= 0:
+        n = 1
+    for i in range(0, len(items), n):
+        yield items[i : i + n]
+
+
+# ============================================================
+# Imports
+# ============================================================
+from app_utils import call_openai_responses_json as call_openai_json  # fallback name
+from narrative.core.prompt_builder import build_prompt_inputs, render_narrative_prompt
+
+
+# ============================================================
+# Config
+# ============================================================
+MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.1")
+RAW_LOG = str(NARRATIVE_ROOT / "artifacts" / "narrative_llm_raw.json")
+
+BATCH_LINES = int(os.environ.get("NARR_LLM_BATCH_LINES", "50"))
+BATCH_FLAGS = int(os.environ.get("NARR_LLM_BATCH_FLAGS", "10"))
+
+
+def run_narrative_grouped(
+    *,
+    lines: List[Dict[str, Any]],
+    narrative_codes: List[str],
+    flags_desc: Dict[str, str],
+    required_fields_map: Dict[str, List[str]],
+) -> Dict[str, List[List[str]]]:
+    """
+    Output format:
+    {
+      "BB":[["K1","K2"],["K3"]],
+      "CMC":[["K7","K9"]]
+    }
+    """
+    out: Dict[str, List[List[str]]] = {}
+
+    if not lines or not narrative_codes:
+        return out
+
+    if build_prompt_inputs is None or render_narrative_prompt is None:
+        raise RuntimeError("prompt_builder is missing required callables.")
+
+    for lines_batch in chunk(lines, BATCH_LINES):
+        for flags_batch in chunk(narrative_codes, BATCH_FLAGS):
+
+            subs = build_prompt_inputs(
+                lines=lines_batch,
+                flag_codes=flags_batch,
+                flags_desc=flags_desc,
+                required_fields_map=required_fields_map,
+            )
+
+            prompt, _meta = render_narrative_prompt(
+                subs=subs,
+                prefix=f"NARR_{len(lines_batch)}L_{len(flags_batch)}F",
+            )
+
+            Path(RAW_LOG).parent.mkdir(parents=True, exist_ok=True)
+
+            data = call_openai_json(
+                prompt=prompt,
+                model=MODEL,
+                raw_log_path=Path(RAW_LOG),
+            ) or {}
+
+            if not isinstance(data, dict):
+                continue
+
+            for flag_code, groups in data.items():
+                if not isinstance(groups, list):
+                    continue
+                cur = out.setdefault(str(flag_code), [])
+
+                for g in groups:
+                    if isinstance(g, list) and g:
+                        cleaned = [k for k in g if isinstance(k, str) and k]
+                        if cleaned:
+                            cur.append(cleaned)
+
+    return {k: v for k, v in out.items() if v}
+
+
+if __name__ == "__main__":
+    print("narrative_llm.py OK (imports + chunk).")
+
+=== narrative/core/prompt_builder.py ===
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+
+# ============================================================
+# Paths
+# ============================================================
+CURRENT_FILE = Path(__file__).resolve()
+CORE_DIR = CURRENT_FILE.parent
+NARRATIVE_ROOT = CORE_DIR.parent
+PROJECT_ROOT = CORE_DIR.parents[1]
+
+ARTIFACTS_DIR = NARRATIVE_ROOT / "artifacts"
+DEFAULT_LINES_JSON = ARTIFACTS_DIR / "sample_lines.json"
+DEFAULT_REQUIRED_FIELDS_JSON = NARRATIVE_ROOT / "resources" / "required_fields.json"
+DEFAULT_FLAGS_DESC_JSON = ARTIFACTS_DIR / "flags_desc.json"
+
+PROMPT_TPL = NARRATIVE_ROOT / "resources" / "prompts" / "narrative_batch_csv.txt"
+DEFAULT_RENDERED_DIR = NARRATIVE_ROOT / "resources" / "prompts" / "rendered"
+
+
+# ============================================================
+# Utilities
+# ============================================================
+def _dedupe_keep_order(items: List[str]) -> List[str]:
+    seen = set()
+    out: List[str] = []
+    for x in items:
+        x = (x or "").strip()
+        if not x or x in seen:
+            continue
+        seen.add(x)
+        out.append(x)
+    return out
+
+
+def _read_json(path: Path) -> Any:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _render_placeholders(template: str, subs: Dict[str, Any]) -> str:
+    out = template
+    for k, v in subs.items():
+        key = f"<<{k}>>"
+        if isinstance(v, (dict, list)):
+            sval = json.dumps(v, indent=2, ensure_ascii=False)
+        else:
+            sval = "" if v is None else str(v)
+        out = out.replace(key, sval)
+    return out
+
+
+def _load_lines_from_json(path: Path) -> List[Dict[str, Any]]:
+    data = _read_json(path)
+    if isinstance(data, list):
+        return [x for x in data if isinstance(x, dict)]
+    if isinstance(data, dict) and isinstance(data.get("lines"), list):
+        return [x for x in data["lines"] if isinstance(x, dict)]
+    raise ValueError("Invalid lines JSON format")
+
+
+def _load_required_fields_map(path: Path) -> Dict[str, List[str]]:
+    data = _read_json(path)
+    out: Dict[str, List[str]] = {}
+    if not isinstance(data, dict):
+        return out
+    for k, v in data.items():
+        if isinstance(k, str) and isinstance(v, list):
+            out[k.strip().upper()] = [f.strip() for f in v if isinstance(f, str) and f.strip()]
+    return out
+
+
+# ============================================================
+# Core builder
+# ============================================================
+def build_prompt_inputs(
+    *,
+    lines: List[Dict[str, Any]],
+    flag_codes: List[str],
+    flags_desc: Dict[str, str],
+    required_fields_map: Dict[str, List[str]],
+) -> Dict[str, Any]:
+    flags = _dedupe_keep_order([(c or "").strip().upper() for c in flag_codes if c])
+
+    union_fields: List[str] = []
+    per_flag_fields: Dict[str, List[str]] = {}
+
+    for code in flags:
+        fields = required_fields_map.get(code, [])
+        cleaned = [
+            f.strip()
+            for f in fields
+            if isinstance(f, str) and f.strip() and f.strip().upper() != "ALL_LINES"
+        ]
+        cleaned = _dedupe_keep_order(["KID"] + cleaned)
+        per_flag_fields[code] = cleaned
+        union_fields.extend(cleaned)
+
+    union_fields = _dedupe_keep_order(["KID"] + union_fields)
+
+    slim_lines = [{k: ln.get(k, "") for k in union_fields} for ln in lines if isinstance(ln, dict)]
+
+    flags_block = "\n".join(
+        f"- {c}: {(flags_desc.get(c, '') or '').strip()}" for c in flags
+    ).strip()
+
+    required_fields_by_flag_block = "\n".join(
+        f"- {c}: {', '.join(per_flag_fields.get(c, ['KID']))}" for c in flags
+    ).strip()
+
+    return {
+        "FLAG_CODES": flags,
+        "FLAGS_BLOCK": flags_block,
+        "LINES_SCHEMA_FIELDS": union_fields,
+        "LINES_JSON": slim_lines,
+        "REQUIRED_FIELDS_BY_FLAG_BLOCK": required_fields_by_flag_block,
+    }
+
+
+def render_narrative_prompt(*, subs: Dict[str, Any], prefix: str = "") -> Tuple[str, Dict[str, Any]]:
+    if not PROMPT_TPL.exists():
+        raise FileNotFoundError(f"Missing prompt template: {PROMPT_TPL}")
+
+    template = PROMPT_TPL.read_text(encoding="utf-8")
+
+    meta = {
+        "prefix": prefix,
+        "n_flags": len(subs.get("FLAG_CODES", [])),
+        "n_lines": len(subs.get("LINES_JSON", [])),
+        "schema_len": len(subs.get("LINES_SCHEMA_FIELDS", [])),
+    }
+
+    prompt = _render_placeholders(template, subs)
+    return prompt, meta
+
+
+# ============================================================
+# Main (CLI with defaults)
+# ============================================================
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Render narrative LLM prompt (defaults use artifacts samples)."
+    )
+    parser.add_argument("--lines-json", type=str, default=str(DEFAULT_LINES_JSON))
+    parser.add_argument("--required-fields-json", type=str, default=str(DEFAULT_REQUIRED_FIELDS_JSON))
+    parser.add_argument("--flags-desc-json", type=str, default=str(DEFAULT_FLAGS_DESC_JSON))
+    parser.add_argument("--flag-codes", type=str, default="")
+    parser.add_argument("--out", type=str, default="")
+    parser.add_argument("--prefix", type=str, default="DEFAULT")
+
+    args = parser.parse_args()
+
+    lines = _load_lines_from_json(Path(args.lines_json))
+    required_fields_map = _load_required_fields_map(Path(args.required_fields_json))
+
+    # Flags par défaut = toutes les clés du required_fields.json
+    if args.flag_codes:
+        flag_codes = _dedupe_keep_order(
+            [c.strip().upper() for c in args.flag_codes.split(",") if c.strip()]
+        )
+    else:
+        flag_codes = sorted(required_fields_map.keys())
+
+    flags_desc: Dict[str, str] = {}
+    if args.flags_desc_json and Path(args.flags_desc_json).exists():
+        data = _read_json(Path(args.flags_desc_json))
+        if isinstance(data, dict):
+            flags_desc = {k.strip().upper(): str(v) for k, v in data.items()}
+
+    subs = build_prompt_inputs(
+        lines=lines,
+        flag_codes=flag_codes,
+        flags_desc=flags_desc,
+        required_fields_map=required_fields_map,
+    )
+
+    prompt, meta = render_narrative_prompt(subs=subs, prefix=args.prefix)
+
+    if args.out:
+        out_path = Path(args.out)
+    else:
+        DEFAULT_RENDERED_DIR.mkdir(parents=True, exist_ok=True)
+        out_path = DEFAULT_RENDERED_DIR / f"narrative_prompt_{args.prefix}.txt"
+
+    out_path.write_text(prompt, encoding="utf-8")
+    out_path.with_suffix(out_path.suffix + ".meta.json").write_text(
+        json.dumps(meta, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    print(f"[OK] Prompt written to: {out_path}", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+=== narrative/core/required_fields.py ===
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Dict, List, Set, Tuple
+
+
+def load_required_fields_map(required_fields_path: Path) -> Dict[str, List[str]]:
+    """
+    Input: narrative/required_fields.json
+    Output: dict { FLAG_CODE: [fields...] }
+    """
+    data = json.loads(required_fields_path.read_text(encoding="utf-8"))
+    out: Dict[str, List[str]] = {}
+
+    if not isinstance(data, dict):
+        return out
+
+    for k, v in data.items():
+        if not isinstance(k, str) or not isinstance(v, list):
+            continue
+        code = k.strip().upper()
+        if not code:
+            continue
+
+        fields: List[str] = []
+        for f in v:
+            if isinstance(f, str):
+                f = f.strip()
+                if f:
+                    fields.append(f)
+
+        out[code] = fields
+
+    return out
+
+
+def split_csv_fields_and_context(fields: List[str]) -> Tuple[List[str], bool]:
+    """
+    ALL_LINES n'est pas une colonne CSV.
+    Retourne (csv_fields, needs_all_lines).
+    """
+    needs_all = any((f or "").strip().upper() == "ALL_LINES" for f in fields)
+    csv_fields = [f for f in fields if (f or "").strip().upper() != "ALL_LINES"]
+    return csv_fields, needs_all
+
+
+def union_required_csv_fields(
+    required_map: Dict[str, List[str]],
+    flag_codes: List[str],
+) -> Tuple[List[str], Set[str], bool]:
+    """
+    Pour un set de flags, calcule:
+    - champs CSV requis (union)
+    - flags retenus (intersect avec required_map)
+    - needs_all_lines (si au moins un flag demande ALL_LINES)
+    """
+    wanted = [c.strip().upper() for c in (flag_codes or []) if c and c.strip()]
+    wanted_set = set(wanted)
+
+    present = {c for c in wanted_set if c in required_map}
+    csv_fields: Set[str] = set()
+    needs_all = False
+
+    for c in present:
+        fields = required_map.get(c, [])
+        csv_f, need = split_csv_fields_and_context(fields)
+        csv_fields.update(csv_f)
+        if need:
+            needs_all = True
+
+    return sorted(csv_fields), present, needs_all
+
+=== narrative/core/schema.py ===
+
+
+=== narrative/resources/__init__.py ===
+
+
+=== narrative/resources/prompts/narrative_batch_csv.txt ===
+You are a narrative billing compliance classifier.
+
+FLAGS_JSON=<<FLAGS>>
+REQUIRED_FIELDS_JSON=<<REQUIRED_FIELDS>>
+
+Input invoice lines are CSV text below. Columns may be empty. Use only the fields required per flag (see REQUIRED_FIELDS_JSON). Each line has a unique KID column.
+
+TASK
+Return ONLY valid JSON with this exact shape:
+{"BB":[["K1","K2"],["K3"]],"CMC":[["K7","K9"]]}
+- Keys are flag codes.
+- Values are list of groups; each group is a list of KIDs.
+- If a flag has single-line matches, output each as ["KID"].
+- Omit flags that have no matches.
+- Do NOT output any extra keys or text.
+
+CSV
+<<INVOICES_CSV>>
+
+=== narrative/resources/required_fields.json ===
+{
+  "BB": ["LINE_ITEM_DESCRIPTION"],
+  "CI": ["LINE_ITEM_DESCRIPTION"],
+  "CMC": ["TIMEKEEPER_ID", "LAW_FIRM_MATTER_ID", "LINE_ITEM_DATE", "LINE_ITEM_TASK_CODE", "LINE_ITEM_DESCRIPTION"],
+  "ETD": ["LINE_ITEM_DESCRIPTION", "LINE_ITEM_NUMBER_OF_UNITS"],
+  "ETD-OB": ["LINE_ITEM_DESCRIPTION", "LINE_ITEM_NUMBER_OF_UNITS"],
+  "ETD-UB": ["LINE_ITEM_DESCRIPTION", "LINE_ITEM_NUMBER_OF_UNITS"],
+  "IB": ["LINE_ITEM_NUMBER_OF_UNITS", "LINE_ITEM_DESCRIPTION", "LINE_ITEM_DATE", "TIMEKEEPER_ID"],
+  "IPT": ["LINE_ITEM_DESCRIPTION"],
+  "NC": ["LINE_ITEM_DESCRIPTION"],
+  "OV": ["LINE_ITEM_DESCRIPTION"],
+  "RN": ["LINE_ITEM_DESCRIPTION"],
+  "VE": ["LINE_ITEM_DESCRIPTION"],
+  "WM": ["LAW_FIRM_MATTER_ID", "LINE_ITEM_DESCRIPTION"],
+
+  "ADM": ["LINE_ITEM_DESCRIPTION", "TIMEKEEPER_CLASSIFICATION"],
+  "AT": ["TIMEKEEPER_CLASSIFICATION", "LINE_ITEM_DESCRIPTION"],
+  "IO": ["LINE_ITEM_DESCRIPTION", "TIMEKEEPER_CLASSIFICATION"],
+  "MAC": ["TIMEKEEPER_ID", "LINE_ITEM_DATE", "LINE_ITEM_NUMBER_OF_UNITS", "LINE_ITEM_DESCRIPTION"],
+  "MS": ["LINE_ITEM_DESCRIPTION"],
+  "MSM": ["TIMEKEEPER_ID", "LINE_ITEM_DATE", "LINE_ITEM_DESCRIPTION"],
+  "MT": ["TIMEKEEPER_ID", "TIMEKEEPER_CLASSIFICATION", "LINE_ITEM_DESCRIPTION", "LINE_ITEM_DATE"],
+  "OE": ["LINE_ITEM_DESCRIPTION", "TIMEKEEPER_CLASSIFICATION"],
+  "OSL": ["LINE_ITEM_DESCRIPTION", "TIMEKEEPER_NAME"],
+  "PT": ["TIMEKEEPER_CLASSIFICATION", "LINE_ITEM_DESCRIPTION"],
+  "PTI": ["TIMEKEEPER_ID", "LAW_FIRM_MATTER_ID", "LINE_ITEM_DESCRIPTION"],
+  "PYR": ["TIMEKEEPER_CLASSIFICATION", "LINE_ITEM_DESCRIPTION"],
+  "RM": ["LINE_ITEM_DESCRIPTION"],
+  "RMP": ["TIMEKEEPER_CLASSIFICATION", "LINE_ITEM_DESCRIPTION"],
+  "SM-OQ": ["TIMEKEEPER_CLASSIFICATION", "LINE_ITEM_DESCRIPTION"],
+  "SM-UQ": ["TIMEKEEPER_CLASSIFICATION", "LINE_ITEM_DESCRIPTION"],
+
+  "CF": ["TIMEKEEPER_ID", "LAW_FIRM_MATTER_ID", "LINE_ITEM_DESCRIPTION", "LINE_ITEM_DATE"],
+  "CHP": ["TIMEKEEPER_CLASSIFICATION", "TIMEKEEPER_ID", "LAW_FIRM_MATTER_ID", "LINE_ITEM_NUMBER_OF_UNITS", "LINE_ITEM_DESCRIPTION"],
+  "ER": ["LINE_ITEM_TASK_CODE", "UTBMS_CATEGORY", "LINE_ITEM_DESCRIPTION", "TIMEKEEPER_ID", "LINE_ITEM_NUMBER_OF_UNITS"],
+  "ET": ["LINE_ITEM_DESCRIPTION", "TIMEKEEPER_CLASSIFICATION", "LINE_ITEM_NUMBER_OF_UNITS"],
+  "GRZ": ["TIMEKEEPER_CLASSIFICATION", "LINE_ITEM_DESCRIPTION"],
+  "LCE": ["LINE_ITEM_DESCRIPTION"],
+  "LOI": ["TIMEKEEPER_CLASSIFICATION", "TIMEKEEPER_ID", "LAW_FIRM_MATTER_ID", "LINE_ITEM_DESCRIPTION"],
+  "OC": ["TIMEKEEPER_ID", "LAW_FIRM_MATTER_ID", "LINE_ITEM_DESCRIPTION", "LINE_ITEM_DATE"],
+  "REM": ["LINE_ITEM_DESCRIPTION"],
+  "RT": ["LINE_ITEM_DESCRIPTION", "LAW_FIRM_MATTER_ID"],
+  "RWP": ["LINE_ITEM_DESCRIPTION", "LAW_FIRM_MATTER_ID"],
+  "SIC": ["LINE_ITEM_NUMBER_OF_UNITS", "LINE_ITEM_DESCRIPTION", "LINE_ITEM_DATE", "TIMEKEEPER_ID"],
+  "SU": ["CLIENT_ID", "LINE_ITEM_DESCRIPTION"],
+  "TAX": ["TIMEKEEPER_CLASSIFICATION", "LINE_ITEM_DESCRIPTION", "LAW_FIRM_MATTER_ID"],
+  "TT": ["LINE_ITEM_DESCRIPTION", "LINE_ITEM_NUMBER_OF_UNITS", "LINE_ITEM_TOTAL"]
+}
+
+Notes: prompt_builder.py depends on app_utils.call_openai_responses_json; sample data lives in artifacts/.

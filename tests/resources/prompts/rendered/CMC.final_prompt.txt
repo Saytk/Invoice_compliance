@@ -2,7 +2,7 @@ You are a senior QA engineer for a legal invoice billing compliance engine.
 
 You will receive:
 - the FULL prompt that was used to generate a deterministic Python rule function
-- the GENERATED Python rule function code
+- the GENERATED Python rule function code (ignore this one)
 
 Your job is to generate a test suite sufficient to validate or invalidate the rule implementation.
 
@@ -183,42 +183,5 @@ If no clear objective indicator exists, return None.
 - DO NOT output anything outside the fenced python block.
 
 ===============================================================
-
-@rule("CMC", penalty=0.3333, desc="Timekeeper records time for handling substantially the same task in the same time frame in two or more separate matters or invoices.", version=1)
-def rule_cmc(line) -> RuleResult | None:
-    all_lines = line.get("ALL_LINES")
-    if not all_lines:
-        return None
-    tk = line.get("TIMEKEEPER_ID")
-    date = line.get("LINE_ITEM_DATE")
-    utbms = line.get("UTBMS_CODE")
-    matter = line.get("LAW_FIRM_MATTER_ID")
-    inv = line.get("INVOICE_NUMBER")
-    if not (tk and date and utbms and matter and inv):
-        return None
-    for other in all_lines:
-        if other.get("KID") == line.get("KID"):
-            continue
-        if other.get("TIMEKEEPER_ID") != tk:
-            continue
-        if other.get("LINE_ITEM_DATE") != date:
-            continue
-        if other.get("UTBMS_CODE") != utbms:
-            continue
-        if other.get("LAW_FIRM_MATTER_ID") == matter and other.get("INVOICE_NUMBER") == inv:
-            continue
-        return RuleResult(
-            True,
-            "CMC",
-            0.3333,
-            "Same timekeeper same task same date across matters or invoices",
-            score=None,
-            meta={
-                "other_KID": other.get("KID"),
-                "other_MATTER": other.get("LAW_FIRM_MATTER_ID"),
-                "other_INVOICE": other.get("INVOICE_NUMBER"),
-            },
-        )
-    return None
 
 INPUTS END

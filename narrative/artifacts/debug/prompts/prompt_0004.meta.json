@@ -1,0 +1,17 @@
+{
+  "call_index": 4,
+  "n_lines": 2,
+  "flag_codes": [
+    "REM",
+    "RM",
+    "RMP",
+    "RN",
+    "RT",
+    "RWP",
+    "SIC",
+    "SM-OQ",
+    "SM-UQ",
+    "SU"
+  ],
+  "model_id": "openai.gpt-oss-20b-1:0"
+}

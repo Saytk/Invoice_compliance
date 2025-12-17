@@ -1,0 +1,12 @@
+{
+  "call_index": 28,
+  "n_lines": 2,
+  "flag_codes": [
+    "TAX",
+    "TT",
+    "VE",
+    "WM"
+  ],
+  "model_id": "openai.gpt-oss-20b-1:0",
+  "template": "C:\\Invoice_compliance\\narrative\\resources\\prompts\\narrative_batch_csv.txt"
+}

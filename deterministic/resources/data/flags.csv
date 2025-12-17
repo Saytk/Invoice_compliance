@@ -1,0 +1,62 @@
+GROUP NAME,FLAG ABBR,FLAG NAME,FLAG DESCRIPTION,FLAG PENALTY__
+Billing Hygiene,BB,Block Billing,Lumping or aggregation of multiple tasks into a single narrative entry with a sum total of time instead of listing each task and the precise related time.,27.50%
+Billing Hygiene,CI,Communication Inspecificity,Outside counsel's time entries regarding electronic or telephonic communications should identify the subject matter of the communication and name the counterparty to it.,15.00%
+Billing Hygiene,CMC,Cross Matter Churning,Timekeeper records time for handling substantially the same task in the same time frame in two or more separate matters or invoices.,33.33%
+Billing Hygiene,CMHM,Cross Matter Hourly Maximum,TK bills more than 8 hours in a day spread across more than 1 invoice,25.00%
+Billing Hygiene,DC,Duplicative Charge,The identical line item charge appears twice in the same invoice.,99.99%
+Billing Hygiene,DT,Delinquent Time,All line item time entries should be dated within 61 days of the invoice date.,0.00%
+Billing Hygiene,ETD,Embedded Time Discrepancy,Discrepancies found with time notations embedded in line narratives.,50.00%
+Billing Hygiene,ETD-OB,Embedded Time Discrepancy - Over Billing,The hours billed for the line is greater than the total of embedded time in the narrative.,50.00%
+Billing Hygiene,ETD-UB,Embedded Time Discrepancy - Under Billing,The hours billed for the line is less than the total of embedded time in the narrative.,50.00%
+Billing Hygiene,HM,Hourly Maximum,Timekeepers efficiency levels decrease when working in excess of 8 hours per day.,25.00%
+Billing Hygiene,IB,Increment Billing,"Tasks are separated and recorded in multiple time entries in one-tenth hour increments where task is unlikely to take 6 minutes (e.g., left voice message for client, reviewed three sentence e-mail)",40.00%
+Billing Hygiene,IPT,Indistinguishable Prep Time,"Timekeeper combines ""preparation time and participation time"" without specifying the type of preparatory task has been undertaken or time expended for it (e.g., prepare for and participate in all-hands conference call). Inflates time recorded for primary activity undertaken.",30.00%
+Billing Hygiene,MBI,Minimum Billing Increment,Time entries should be recorded in 1/10th hour increments.,20.00%
+Billing Hygiene,NBD,Non-Business Day Entry,Tasks completed on holidays/weekends often completed less efficiently,20.00%
+Billing Hygiene,NC,No Charge,"Identifies tasks usually undertaken by outside counsel as a client courtesy or law firm marketing activities (audit response letter, delivery of newsletters/client alerts, attendance at routine board meeting).",90.00%
+Billing Hygiene,OV,Overly Verbose,Timekeeper disguises simplicity of task undertaken by writing lengthy narrative,40.00%
+Billing Hygiene,RC,Rate Change,Identifies an unauthorized change in hourly rate.,10.00%
+Billing Hygiene,RH,Round Hour,"Timekeeper bills in round hour increments (1.0, 2.0, etc) with a statistically improbable frequency.",12.50%
+Billing Hygiene,RN,Repeated Narrative,Narrative is repeated verbatim,5.00%
+Billing Hygiene,SITE,Statistically Indefensible Time Entry,Time is recorded in increments that defy statistical probabilities,0.00%
+Billing Hygiene,VE,Vague Entry,Narrative entry lacks sufficient detail as to nature of task(s) completed,30.00%
+Billing Hygiene,WM,Wrong Matter,Identifies a task that appears to be billed to the wrong matter.,100.00%
+Staffing Efficiency,ADM,Administrative Activities,"Administrative functions (billing, scheduling, calendaring, filing) billed at attorney or other legal professional rates.",90.00%
+Staffing Efficiency,AT,Associate Training,Billing by junior legal personnel for activities where primary involvement by junior timekeeper pertains to his or her professional development and internal law firm training purposes.,22.50%
+Staffing Efficiency,DW,Dispersed Work,Large number of attorneys handling discrete tasks with little knowledge sharing or workflow management,12.50%
+Staffing Efficiency,FF,Fixed Fee,Matter billed under a fixed fee arrangement,50.00%
+Staffing Efficiency,FY,First Year,Time is recorded by recent law graduates who operate at a less efficient level.,30.00%
+Staffing Efficiency,GEO,Geographical Adjustment,Rates for timekeepers in major metropolitan areas adjusted to rates for equally qualified timekeepers in same firm with offices in less expensive metropolitan areas.,40.00%
+Staffing Efficiency,IO,Insourcing Opportunity,"Reflects recurring, low value/low risk work best redeploy to alternative lower cost provider.",12.50%
+Staffing Efficiency,MAC,Multiple Attorney Call,More than one timekeeper bills for same telephonic call without client pre-approval.,50.00%
+Staffing Efficiency,MS,Media Statement,Media Statements made by Outside Counsel on behalf of Client,12.50%
+Staffing Efficiency,MSM,Multi-Staffed Meetings,Meeting or conference attended by more than one timekeeper,12.50%
+Staffing Efficiency,MT,Multi-Teaming,Two timekeepers at same level with the same area of expertise should not handle the identical task within same time frame,12.50%
+Staffing Efficiency,OE,Outside Expertise,Timekeeper researches or must become educated on matters outside of timekeeper's core focus or area of practice,17.50%
+Staffing Efficiency,OSL,Other State Law,Timekeeper undertakes task involving the law of another jurisdiction in which timekeeper is not licensed.,30.00%
+Staffing Efficiency,PT,Paralegal Task,"Attorney level personnel should spend minimal time on tasks typically delegated to paralegals (docketing, preparation of entity formation documents, document review, bate stamping).",30.00%
+Staffing Efficiency,PTI,Personnel Transition Inefficiencies,Time associated with a transitioning timekeeper becoming familiar with a new matter,12.50%
+Staffing Efficiency,PYR,Pyramiding,"Legal professional rate should not be charged for task(s) not requiring legal training, knowledge or judgment (e.g., reviewing newspaper articles re: lawsuit)",20.00%
+Staffing Efficiency,RM,Research Memo,Memorialization of Legal Research in Written Medium,12.50%
+Staffing Efficiency,RMP,Routine Motion Practice,"Routine motions should prepared by very junior personnel with a modest level of review by non-junior personnel (e.g., agreed upon motion, notice of deposition, etc)",25.00%
+Staffing Efficiency,SAC,Summer Associate Charge,No charge for summer associates,90.00%
+Staffing Efficiency,SM-OQ,Skill Set Mismatch Overqualified,Activities flagged when falls below timekeeper's experience level.,30.00%
+Staffing Efficiency,SM-UQ,Skill Set Mismatch Under Qualified,Activities flagged when tasks exceeds timekeeper's level of experience.,30.00%
+Staffing Efficiency,TP,Transitory Professional,Highlights line item entries by non-core team members.,40.00%
+Staffing Efficiency,UA,Unsupervised Associate,Matters where junior attorneys or non-attorney have disproportionately large number of billable hours without apparent partner oversight or involvement.,25.00%
+Staffing Efficiency,ULM,Under Leveraged Matter,Matter staffing should use well leveraged mix of partners and associates for optimal cost efficiency.,25.00%
+Workflow Efficiency,CF,Churning File,"Timekeeper repeatedly undertakes seemingly legitimate tasks which adds marginal value for client (e.g., repeated updates of corporate minute book, checking dockets, updating form contracts).",33.33%
+Workflow Efficiency,CHP,Chipping,"Less productive senior level timekeepers often serve as a ""sounding board"" burying small time charges within a larger matter.",12.50%
+Workflow Efficiency,ER,Excessive Research,Legal research occurs in an hourly amount in excess of client's guidelines for pre-approval.,30.00%
+Workflow Efficiency,ET,Excessive Time,"Time for a repeated or routine task (e.g., first draft of form lease for multi-unit residential apartments, draft of UCC-1 ) exceeds industry norms for similarly experienced timekeepers.",20.00%
+Workflow Efficiency,GRZ,Grazing,"Senior timekeepers record hours when ""shadowing"" another partner or keeping abreast of matters without incremental value add to a client.",10.00%
+Workflow Efficiency,LCE,Local Counsel Engagement,Cost of interviewing and retention of local counsel where lead counsel strategically directs matter to a jurisdiction where it is unlicensed.,20.00%
+Workflow Efficiency,LOI,Legal Opinion Inflation,Multiple senior level attorneys record time for the preparation and review of a legal opinion.,50.00%
+Workflow Efficiency,OC,Office Communication,"Excessive internal office conferences, meetings or other communications between and among outside counsel.",20.00%
+Workflow Efficiency,REM,Remedial Work,Identifies remedial or corrective work due to law firm errors,50.00%
+Workflow Efficiency,RT,Repeated Task,Natural language processing tool detects repeated activity(ies) or category(ies) of activities which occurs with unusual frequency,0.00%
+Workflow Efficiency,RWP,Recycled Work Product,Indentifies time entries where modifications to forms and templates are billed as if work product was created anew.,30.00%
+Workflow Efficiency,SIC,Small Incremental Communications,"Small, repeating communications over time",40.00%
+Workflow Efficiency,SU,Status Update,Narrative entries reflect an unusually high occurence of status updates for a client,10.00%
+Workflow Efficiency,TAX,Tax Attorney,Identifies involvement of tax attorney in matters which are not taxation-centric.,30.00%
+Workflow Efficiency,TT,Travel Time,Travel time should not be charged or discounted,50.00%

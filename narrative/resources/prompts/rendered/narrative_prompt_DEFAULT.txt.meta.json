@@ -1,0 +1,6 @@
+{
+  "template": "C:/Invoice_compliance/narrative/resources/prompts/narrative_batch_csv.txt",
+  "n_flags": 44,
+  "n_union_headers": 12,
+  "csv_chars": 452
+}

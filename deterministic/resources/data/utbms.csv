@@ -1,0 +1,94 @@
+CATEGORY,SUBCATEGORY,CODE,DESCRIPTION
+Activity,General,A101,"Planning and strategizing for tasks, events, or proceedings."
+Activity,Research,A102,"Investigating case law, statutes, and legal authorities."" A103,Activity,Drafting,""Creating, editing, and refining legal documents."
+Activity,Analysis,A104,"Examining and analyzing legal documents, evidence, and arguments."
+Activity,Communication,A105,Internal discussions within the law firm.
+Activity,Communication,A106,Discussions and correspondence with the client.
+Activity,Communication,A107,Discussions and correspondence with expert witnesses.
+Activity,Communication,A108,Filing documents and contacting court personnel.
+Activity,Communication,A109,Negotiating and gathering information from external parties.
+Activity,Attendance,A110,"Attending hearings, depositions, and legal proceedings."
+Activity,Travel,A111,Time spent traveling for legal purposes.
+Activity,Administration,A112,"Organizing case files, managing deadlines, and coordinating schedules."
+Activity,Investigation,A113,Gathering evidence and information through interviews and site inspections.
+Activity,Negotiation,A114,Negotiating settlements and agreements.
+Activity,ADR,A115,Participating in mediation sessions.
+Activity,ADR,A116,Participating in arbitration proceedings.
+Activity,Transactional,A117,Preparing for the closing of a transaction.
+Activity,Transactional,A118,Attending the closing of a transaction.
+Activity,Trial Prep,A119,Preparing for trials and hearings.
+Activity,Trial,A120,Attending and participating in trials and hearings.
+Activity,Appeal,A121,Preparing appellate briefs and legal arguments.
+Activity,Appeal,A122,Attending and participating in appellate court proceedings.
+Activity,Discovery,A123,Preparing for depositions.
+Activity,Discovery,A124,Attending and participating in depositions.
+Activity,ADR,A125,Preparing for mediation sessions.
+Activity,ADR,A126,Preparing for arbitration hearings.
+Bankruptcy,Administration,B100,General administrative tasks in bankruptcy cases.
+Bankruptcy,Case Management,B110,"Managing case specifics, including hearings and trustee coordination."
+Bankruptcy,Operations,B200,"Overseeing debtor's finances, business operations, and employee issues."
+Bankruptcy,Finance,B230,Securing funding and managing cash flow for the debtor.
+Bankruptcy,Claims,B300,"Reviewing, objecting to, and negotiating claims."
+Bankruptcy,Claims,B310,"Administering claims, including objections and distributions."
+Counseling,Due Diligence,C100,Gathering information and conducting due diligence.
+Counseling,Research,C200,Researching and analyzing legal issues.
+Counseling,Advice,C300,Analyzing legal issues and providing counsel.
+Counseling,Communication,C400,Communicating with third parties related to the case.
+Expense,Documents,E101,Costs for photocopying or printing documents.
+Expense,Documents,E102,Costs for external printing services.
+Expense,Documents,E103,Costs for word processing and transcription.
+Expense,Communication,E104,Costs for sending or receiving faxes.
+Expense,Communication,E105,Costs for telephone calls.
+Expense,Research,E106,Costs for online legal databases and research services.
+Expense,Delivery,E107,Costs for courier or messenger services.
+Expense,Communication,E108,Costs for mailing documents or packages.
+Expense,Travel,E109,"Costs for local travel, such as mileage."
+Expense,Travel,E110,"Costs for out-of-town travel, including airfare and lodging."
+Expense,Travel,E111,Costs for meals during travel or meetings.
+Expense,Court,E112,Fees paid to the court for filing and services.
+Expense,Legal Process,E113,Costs for serving subpoenas.
+Expense,Witnesses,E114,Payments to witnesses for time and expenses.
+Expense,Discovery,E115,Costs for obtaining deposition transcripts.
+Expense,Trial,E116,Costs for obtaining trial transcripts.
+Expense,Trial,E117,Costs for preparing and presenting trial exhibits.
+Expense,Litigation Support,E118,Fees for litigation support services.
+Expense,Experts,E119,Fees paid to expert witnesses.
+Expense,Investigation,E120,Fees paid to private investigators.
+Expense,ADR,E121,Fees paid to arbitrators or mediators.
+Expense,Legal,E122,Fees paid to local counsel.
+Expense,Legal,E123,"Fees paid to other professionals, such as consultants."
+Expense,Other,E124,Miscellaneous expenses not covered by other codes.
+Litigation,Case Management,L100,Overarching category for managing a litigation case.
+Litigation,Investigation,L110,Gathering and analyzing evidence.
+Litigation,Strategy,L120,Analyzing legal issues and developing case strategy.
+Litigation,Experts,L140,Engaging and preparing expert witnesses.
+Litigation,Discovery,L150,Developing a discovery plan.
+Litigation,Discovery,L160,Managing the discovery process.
+Litigation,Case Management,L190,Miscellaneous case management activities.
+Litigation,Pre-Trial Motions,L200,Overarching category for pre-trial motions.
+Litigation,Pleadings,L210,Preparing and filing pleadings.
+Litigation,Injunctions,L220,Seeking or opposing injunctions and restraining orders.
+Litigation,Writs,L230,Seeking or opposing extraordinary writs.
+Litigation,Motions,L240,Preparing and arguing summary judgment motions.
+Litigation,Motions,L250,Preparing and arguing other dispositive motions.
+Litigation,Pre-Trial Motions,L260,Miscellaneous pre-trial motion activities.
+Litigation,Discovery,L300,Overarching category for the discovery process.
+Litigation,Discovery,L310,Preparing and responding to written discovery.
+Litigation,Discovery,L320,Producing documents in response to requests.
+Litigation,Discovery,L330,Taking and defending depositions.
+Litigation,Discovery,L340,Miscellaneous discovery activities.
+Litigation,Discovery,L390,Miscellaneous discovery activities.
+Litigation,Trial,L400,Overarching category for trial preparation and proceedings.
+Litigation,Trial Prep,L410,Preparing for trial.
+Litigation,Jury Selection,L420,Activities related to jury selection.
+Litigation,Witnesses,L440,Preparing witnesses for trial testimony.
+Litigation,Trial,L450,Attending and participating in trials and hearings.
+Litigation,Appeal,L500,Overarching category for appeals.
+Litigation,Post-Trial Motions,L510,Preparing and arguing post-trial motions.
+Litigation,Appeal,L520,Drafting and filing appellate briefs.
+Litigation,Appeal,L530,Preparing for and presenting appellate oral arguments.
+Project,Administration,P100,General administrative tasks in non-litigation projects.
+Project,Due Diligence,P200,Gathering information and conducting due diligence.
+Project,Corporate,P210,Reviewing corporate documents and records.
+Project,Strategy,P300,Analyzing legal and business issues and developing strategy.
+,,,

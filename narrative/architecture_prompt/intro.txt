@@ -1,0 +1,57 @@
+Bonjour,
+
+Je souhaite créer une application de vérification de conformité de factures juridiques.
+
+L’application s’appuie sur trois fichiers principaux :
+
+1. Flags (règles de conformité à détecter)
+2. UTBMS (codes standardisés de tâches / activités)
+3. Invoices (lignes de facturation)
+
+Voici un échantillon de chacun de ces fichiers.
+
+------------------------------------------------------------
+1. FICHIER DES FLAGS
+------------------------------------------------------------
+
+GROUP NAME,FLAG ABBR,FLAG NAME,FLAG DESCRIPTION,FLAG PENALTY__
+Billing Hygiene,BB,Block Billing,Lumping or aggregation of multiple tasks into a single narrative entry with a sum total of time instead of listing each task and the precise related time.,27.50%
+
+------------------------------------------------------------
+2. FICHIER DES FACTURES (INVOICES)
+------------------------------------------------------------
+
+INVOICE_DATE,INVOICE_NUMBER,CLIENT_ID,LAW_FIRM_MATTER_ID,INVOICE_TOTAL,BILLING_START_DATE,BILLING_END_DATE,INVOICE_DESCRIPTION,LINE_ITEM_NUMBER,EXP/FEE/INV_ADJ_TYPE,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_ADJUSTMENT_AMOUNT,LINE_ITEM_TOTAL,LINE_ITEM_DATE,LINE_ITEM_TASK_CODE,LINE_ITEM_EXPENSE_CODE,LINE_ITEM_ACTIVITY_CODE,TIMEKEEPER_ID,LINE_ITEM_DESCRIPTION,LAW_FIRM_ID,LINE_ITEM_UNIT_COST,TIMEKEEPER_NAME,TIMEKEEPER_CLASSIFICATION,LAW_FIRM_NAME,CLIENT_NAME,RUNID,KID
+20241210,31714,,,,,,,66380721143,,0.1,,42.27,20241125,L350,,A101,,Worked with Person 60 regarding research for motion to compel.,,422.7,"Garza, Janet",Of Counsel,Schirrmeister Diaz-Arrastia Brem LLP,Client POC2,6638072A-92C9-4E7A-93B0-A2DF71796A12,FF82182B-7BA1-42A8-8F78-E58C7A603F84
+
+------------------------------------------------------------
+3. FICHIER UTBMS
+------------------------------------------------------------
+
+CATEGORY,SUBCATEGORY,CODE,DESCRIPTION
+Activity,General,A101,"Planning and strategizing for tasks, events, or proceedings."
+
+------------------------------------------------------------
+OBJECTIF DE L’APPLICATION
+------------------------------------------------------------
+
+Le but de l’application est de prendre une ligne de facture et de déterminer si un ou plusieurs flags s’appliquent à cette ligne.
+
+Une contrainte importante est que de nouveaux flags peuvent être ajoutés régulièrement.
+
+Pour cette raison, l’architecture doit permettre de :
+
+- générer automatiquement du code pour chaque nouveau flag,
+- appliquer des règles déterministes lorsque les critères sont objectifs,
+- traiter différemment les cas narratifs (texte libre) lorsque l’interprétation est nécessaire.
+
+------------------------------------------------------------
+SUITE
+------------------------------------------------------------
+
+Je vais maintenant transmettre :
+
+- l’architecture globale de l’application,
+- ainsi que le contenu détaillé de mes fichiers les plus importants.
+
+Merci de ne pas répondre tant que je ne t’aurai pas explicitement indiqué que j’ai terminé.

@@ -1,0 +1,30 @@
+You are a narrative billing compliance classifier.
+
+FLAGS (code -> description)
+- MSM: Multi-Staffed Meetings | Meeting or conference attended by more than one timekeeper
+- MT: Multi-Teaming | Two timekeepers at same level with the same area of expertise should not handle the identical task within same time frame
+- NC: No Charge | Identifies tasks usually undertaken by outside counsel as a client courtesy or law firm marketing activities (audit response letter, delivery of newsletters/client alerts, attendance at routine board meeting).
+- OC: Office Communication | Excessive internal office conferences, meetings or other communications between and among outside counsel.
+- OE: Outside Expertise | Timekeeper researches or must become educated on matters outside of timekeeper's core focus or area of practice
+- OSL: Other State Law | Timekeeper undertakes task involving the law of another jurisdiction in which timekeeper is not licensed.
+- OV: Overly Verbose | Timekeeper disguises simplicity of task undertaken by writing lengthy narrative
+- PT: Paralegal Task | Attorney level personnel should spend minimal time on tasks typically delegated to paralegals (docketing, preparation of entity formation documents, document review, bate stamping).
+- PTI: Personnel Transition Inefficiencies | Time associated with a transitioning timekeeper becoming familiar with a new matter
+- PYR: Pyramiding | Legal professional rate should not be charged for task(s) not requiring legal training, knowledge or judgment (e.g., reviewing newspaper articles re: lawsuit)
+
+INVOICE CSV FORMAT (union headers)
+KID,TIMEKEEPER_ID,LINE_ITEM_DATE,LINE_ITEM_DESCRIPTION,TIMEKEEPER_CLASSIFICATION,LAW_FIRM_MATTER_ID,TIMEKEEPER_NAME
+
+INVOICE LINES (CSV in the union format above)
+KID,TIMEKEEPER_ID,LINE_ITEM_DATE,LINE_ITEM_DESCRIPTION,TIMEKEEPER_CLASSIFICATION,LAW_FIRM_MATTER_ID,TIMEKEEPER_NAME
+kid1,TK1,20241125,Worked with Person 60 regarding research for motion to compel.,Of Counsel,,"Garza, Janet"
+kid2,TK1,20241125,Worked with Person 60 regarding research for motion to compel.,Of Counsel,,"Garza, Janet"
+
+TASK
+Return ONLY valid JSON with this exact shape:
+{"BB":[["K1","K2"],["K3"]],"CMC":[["K7","K9"]]}
+- Keys are flag codes.
+- Values are list of groups; each group is a list of KIDs.
+- If a flag has single-line matches, output each as ["KID"].
+- Omit flags that have no matches.
+- Do NOT output any extra keys or text.

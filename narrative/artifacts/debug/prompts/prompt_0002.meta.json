@@ -1,0 +1,17 @@
+{
+  "call_index": 2,
+  "n_lines": 2,
+  "flag_codes": [
+    "ETD-OB",
+    "ETD-UB",
+    "GRZ",
+    "IB",
+    "IO",
+    "IPT",
+    "LCE",
+    "LOI",
+    "MAC",
+    "MS"
+  ],
+  "model_id": "openai.gpt-oss-20b-1:0"
+}

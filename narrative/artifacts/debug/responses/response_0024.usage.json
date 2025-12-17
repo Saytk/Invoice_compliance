@@ -1,0 +1,9 @@
+{
+  "completion_tokens": 577,
+  "prompt_tokens": 682,
+  "prompt_tokens_details": {
+    "audio_tokens": 0,
+    "cached_tokens": 656
+  },
+  "total_tokens": 1259
+}

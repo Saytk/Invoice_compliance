@@ -1,0 +1,259 @@
+You are a narrative billing compliance classifier.
+
+FLAGS_JSON={
+  "ADM": "",
+  "AT": "",
+  "BB": "",
+  "CF": "",
+  "CHP": "",
+  "CI": "",
+  "CMC": "",
+  "ER": "",
+  "ET": "",
+  "ETD": "",
+  "ETD-OB": "",
+  "ETD-UB": "",
+  "GRZ": "",
+  "IB": "",
+  "IO": "",
+  "IPT": "",
+  "LCE": "",
+  "LOI": "",
+  "MAC": "",
+  "MS": "",
+  "MSM": "",
+  "MT": "",
+  "NC": "",
+  "OC": "",
+  "OE": "",
+  "OSL": "",
+  "OV": "",
+  "PT": "",
+  "PTI": "",
+  "PYR": "",
+  "REM": "",
+  "RM": "",
+  "RMP": "",
+  "RN": "",
+  "RT": "",
+  "RWP": "",
+  "SIC": "",
+  "SM-OQ": "",
+  "SM-UQ": "",
+  "SU": "",
+  "TAX": "",
+  "TT": "",
+  "VE": "",
+  "WM": ""
+}
+REQUIRED_FIELDS_JSON={
+  "ADM": [
+    "LINE_ITEM_DESCRIPTION",
+    "TIMEKEEPER_CLASSIFICATION"
+  ],
+  "AT": [
+    "TIMEKEEPER_CLASSIFICATION",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "BB": [
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "CF": [
+    "TIMEKEEPER_ID",
+    "LAW_FIRM_MATTER_ID",
+    "LINE_ITEM_DESCRIPTION",
+    "LINE_ITEM_DATE"
+  ],
+  "CHP": [
+    "TIMEKEEPER_CLASSIFICATION",
+    "TIMEKEEPER_ID",
+    "LAW_FIRM_MATTER_ID",
+    "LINE_ITEM_NUMBER_OF_UNITS",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "CI": [
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "CMC": [
+    "TIMEKEEPER_ID",
+    "LAW_FIRM_MATTER_ID",
+    "LINE_ITEM_DATE",
+    "LINE_ITEM_TASK_CODE",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "ER": [
+    "LINE_ITEM_TASK_CODE",
+    "UTBMS_CATEGORY",
+    "LINE_ITEM_DESCRIPTION",
+    "TIMEKEEPER_ID",
+    "LINE_ITEM_NUMBER_OF_UNITS"
+  ],
+  "ET": [
+    "LINE_ITEM_DESCRIPTION",
+    "TIMEKEEPER_CLASSIFICATION",
+    "LINE_ITEM_NUMBER_OF_UNITS"
+  ],
+  "ETD": [
+    "LINE_ITEM_DESCRIPTION",
+    "LINE_ITEM_NUMBER_OF_UNITS"
+  ],
+  "ETD-OB": [
+    "LINE_ITEM_DESCRIPTION",
+    "LINE_ITEM_NUMBER_OF_UNITS"
+  ],
+  "ETD-UB": [
+    "LINE_ITEM_DESCRIPTION",
+    "LINE_ITEM_NUMBER_OF_UNITS"
+  ],
+  "GRZ": [
+    "TIMEKEEPER_CLASSIFICATION",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "IB": [
+    "LINE_ITEM_NUMBER_OF_UNITS",
+    "LINE_ITEM_DESCRIPTION",
+    "LINE_ITEM_DATE",
+    "TIMEKEEPER_ID"
+  ],
+  "IO": [
+    "LINE_ITEM_DESCRIPTION",
+    "TIMEKEEPER_CLASSIFICATION"
+  ],
+  "IPT": [
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "LCE": [
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "LOI": [
+    "TIMEKEEPER_CLASSIFICATION",
+    "TIMEKEEPER_ID",
+    "LAW_FIRM_MATTER_ID",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "MAC": [
+    "TIMEKEEPER_ID",
+    "LINE_ITEM_DATE",
+    "LINE_ITEM_NUMBER_OF_UNITS",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "MS": [
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "MSM": [
+    "TIMEKEEPER_ID",
+    "LINE_ITEM_DATE",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "MT": [
+    "TIMEKEEPER_ID",
+    "TIMEKEEPER_CLASSIFICATION",
+    "LINE_ITEM_DESCRIPTION",
+    "LINE_ITEM_DATE"
+  ],
+  "NC": [
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "OC": [
+    "TIMEKEEPER_ID",
+    "LAW_FIRM_MATTER_ID",
+    "LINE_ITEM_DESCRIPTION",
+    "LINE_ITEM_DATE"
+  ],
+  "OE": [
+    "LINE_ITEM_DESCRIPTION",
+    "TIMEKEEPER_CLASSIFICATION"
+  ],
+  "OSL": [
+    "LINE_ITEM_DESCRIPTION",
+    "TIMEKEEPER_NAME"
+  ],
+  "OV": [
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "PT": [
+    "TIMEKEEPER_CLASSIFICATION",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "PTI": [
+    "TIMEKEEPER_ID",
+    "LAW_FIRM_MATTER_ID",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "PYR": [
+    "TIMEKEEPER_CLASSIFICATION",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "REM": [
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "RM": [
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "RMP": [
+    "TIMEKEEPER_CLASSIFICATION",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "RN": [
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "RT": [
+    "LINE_ITEM_DESCRIPTION",
+    "LAW_FIRM_MATTER_ID"
+  ],
+  "RWP": [
+    "LINE_ITEM_DESCRIPTION",
+    "LAW_FIRM_MATTER_ID"
+  ],
+  "SIC": [
+    "LINE_ITEM_NUMBER_OF_UNITS",
+    "LINE_ITEM_DESCRIPTION",
+    "LINE_ITEM_DATE",
+    "TIMEKEEPER_ID"
+  ],
+  "SM-OQ": [
+    "TIMEKEEPER_CLASSIFICATION",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "SM-UQ": [
+    "TIMEKEEPER_CLASSIFICATION",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "SU": [
+    "CLIENT_ID",
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "TAX": [
+    "TIMEKEEPER_CLASSIFICATION",
+    "LINE_ITEM_DESCRIPTION",
+    "LAW_FIRM_MATTER_ID"
+  ],
+  "TT": [
+    "LINE_ITEM_DESCRIPTION",
+    "LINE_ITEM_NUMBER_OF_UNITS",
+    "LINE_ITEM_TOTAL"
+  ],
+  "VE": [
+    "LINE_ITEM_DESCRIPTION"
+  ],
+  "WM": [
+    "LAW_FIRM_MATTER_ID",
+    "LINE_ITEM_DESCRIPTION"
+  ]
+}
+
+Input invoice lines are CSV text below. Columns may be empty. Use only the fields required per flag (see REQUIRED_FIELDS_JSON). Each line has a unique KID column.
+
+TASK
+Return ONLY valid JSON with this exact shape:
+{"BB":[["K1","K2"],["K3"]],"CMC":[["K7","K9"]]}
+- Keys are flag codes.
+- Values are list of groups; each group is a list of KIDs.
+- If a flag has single-line matches, output each as ["KID"].
+- Omit flags that have no matches.
+- Do NOT output any extra keys or text.
+
+CSV
+INVOICE_DATE,INVOICE_NUMBER,CLIENT_ID,LAW_FIRM_MATTER_ID,INVOICE_TOTAL,BILLING_START_DATE,BILLING_END_DATE,INVOICE_DESCRIPTION,LINE_ITEM_NUMBER,EXP/FEE/INV_ADJ_TYPE,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_ADJUSTMENT_AMOUNT,LINE_ITEM_TOTAL,LINE_ITEM_DATE,LINE_ITEM_TASK_CODE,LINE_ITEM_EXPENSE_CODE,LINE_ITEM_ACTIVITY_CODE,TIMEKEEPER_ID,LINE_ITEM_DESCRIPTION,LAW_FIRM_ID,LINE_ITEM_UNIT_COST,TIMEKEEPER_NAME,TIMEKEEPER_CLASSIFICATION,LAW_FIRM_NAME,CLIENT_NAME,RUNID,KID
+20241210,31714,,,,,,,1,,0.5,,42.27,20241125,L350,,A101,TK1,"Worked with Person 60 regarding research for motion to compel.",,422.7,"Garza, Janet",Of Counsel,Schirrmeister Diaz-Arrastia Brem LLP,Client POC2,run1,kid1
+20241210,99999,,,,,,,2,,0.5,,42.27,20241125,L350,,A101,TK1,"Worked with Person 60 regarding research for motion to compel.",,422.7,"Garza, Janet",Of Counsel,Schirrmeister Diaz-Arrastia Brem LLP,Client POC2,run1,kid2

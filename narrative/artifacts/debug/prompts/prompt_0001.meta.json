@@ -1,0 +1,17 @@
+{
+  "call_index": 1,
+  "n_lines": 2,
+  "flag_codes": [
+    "ADM",
+    "AT",
+    "BB",
+    "CF",
+    "CHP",
+    "CI",
+    "CMC",
+    "ER",
+    "ET",
+    "ETD"
+  ],
+  "model_id": "openai.gpt-oss-20b-1:0"
+}

@@ -1,0 +1,17 @@
+{
+  "call_index": 3,
+  "n_lines": 2,
+  "flag_codes": [
+    "MSM",
+    "MT",
+    "NC",
+    "OC",
+    "OE",
+    "OSL",
+    "OV",
+    "PT",
+    "PTI",
+    "PYR"
+  ],
+  "model_id": "openai.gpt-oss-20b-1:0"
+}

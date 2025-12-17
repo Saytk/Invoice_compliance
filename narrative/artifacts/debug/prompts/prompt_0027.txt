@@ -1,0 +1,30 @@
+You are a narrative billing compliance classifier.
+
+FLAGS (code -> description)
+- REM: Remedial Work | Identifies remedial or corrective work due to law firm errors
+- RM: Research Memo | Memorialization of Legal Research in Written Medium
+- RMP: Routine Motion Practice | Routine motions should prepared by very junior personnel with a modest level of review by non-junior personnel (e.g., agreed upon motion, notice of deposition, etc)
+- RN: Repeated Narrative | Narrative is repeated verbatim
+- RT: Repeated Task | Natural language processing tool detects repeated activity(ies) or category(ies) of activities which occurs with unusual frequency
+- RWP: Recycled Work Product | Indentifies time entries where modifications to forms and templates are billed as if work product was created anew.
+- SIC: Small Incremental Communications | Small, repeating communications over time
+- SM-OQ: Skill Set Mismatch Overqualified | Activities flagged when falls below timekeeper's experience level.
+- SM-UQ: Skill Set Mismatch Under Qualified | Activities flagged when tasks exceeds timekeeper's level of experience.
+- SU: Status Update | Narrative entries reflect an unusually high occurence of status updates for a client
+
+INVOICE CSV FORMAT (union headers)
+KID,LINE_ITEM_DESCRIPTION,TIMEKEEPER_CLASSIFICATION,LAW_FIRM_MATTER_ID,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_DATE,TIMEKEEPER_ID,CLIENT_ID
+
+INVOICE LINES (CSV in the union format above)
+KID,LINE_ITEM_DESCRIPTION,TIMEKEEPER_CLASSIFICATION,LAW_FIRM_MATTER_ID,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_DATE,TIMEKEEPER_ID,CLIENT_ID
+kid1,Worked with Person 60 regarding research for motion to compel.,Of Counsel,,0.5,20241125,TK1,
+kid2,Worked with Person 60 regarding research for motion to compel.,Of Counsel,,0.5,20241125,TK1,
+
+TASK
+Return ONLY valid JSON with this exact shape:
+{"BB":[["K1","K2"],["K3"]],"CMC":[["K7","K9"]]}
+- Keys are flag codes.
+- Values are list of groups; each group is a list of KIDs.
+- If a flag has single-line matches, output each as ["KID"].
+- Omit flags that have no matches.
+- Do NOT output any extra keys or text.
