@@ -1,21 +1,15 @@
 {
   "meta": {
-    "created_at_utc": "2025-12-17T00:23:54.825689Z",
-    "model_id": "openai.gpt-oss-20b-1:0",
+    "created_at_utc": "2025-12-17T05:23:21.154474Z",
+    "model_id": "openai.gpt-oss-120b-1:0",
     "dry_run": false,
     "debug_dir": "C:\\Invoice_compliance\\narrative\\artifacts\\debug"
   },
   "results": {
-    "RN": [
+    "BB": [
       [
-        "kid1",
-        "kid2"
-      ]
-    ],
-    "RT": [
-      [
-        "kid1",
-        "kid2"
+        "4B802E08-6C07-4597-A03D-B647191FFC6B",
+        "5FB1B0FD-4CB7-46CF-8677-F63D689F8569"
       ]
     ]
   }

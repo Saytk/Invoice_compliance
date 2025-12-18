@@ -1,0 +1,72 @@
+You are a narrative billing compliance classifier.
+
+FLAGS (code -> description)
+- ADM: Administrative Activities | Administrative functions (billing, scheduling, calendaring, filing) billed at attorney or other legal professional rates.
+- AT: Associate Training | Billing by junior legal personnel for activities where primary involvement by junior timekeeper pertains to his or her professional development and internal law firm training purposes.
+- BB: Block Billing | Lumping or aggregation of multiple tasks into a single narrative entry with a sum total of time instead of listing each task and the precise related time.
+- CF: Churning File | Timekeeper repeatedly undertakes seemingly legitimate tasks which adds marginal value for client (e.g., repeated updates of corporate minute book, checking dockets, updating form contracts).
+- CHP: Chipping | Less productive senior level timekeepers often serve as a "sounding board" burying small time charges within a larger matter.
+- CI: Communication Inspecificity | Outside counsel's time entries regarding electronic or telephonic communications should identify the subject matter of the communication and name the counterparty to it.
+- CMC: Cross Matter Churning | Timekeeper records time for handling substantially the same task in the same time frame in two or more separate matters or invoices.
+- ER: Excessive Research | Legal research occurs in an hourly amount in excess of client's guidelines for pre-approval.
+- ET: Excessive Time | Time for a repeated or routine task (e.g., first draft of form lease for multi-unit residential apartments, draft of UCC-1 ) exceeds industry norms for similarly experienced timekeepers.
+- ETD: Embedded Time Discrepancy | Discrepancies found with time notations embedded in line narratives.
+- ETD-OB: Embedded Time Discrepancy - Over Billing | The hours billed for the line is greater than the total of embedded time in the narrative.
+- ETD-UB: Embedded Time Discrepancy - Under Billing | The hours billed for the line is less than the total of embedded time in the narrative.
+- GRZ: Grazing | Senior timekeepers record hours when "shadowing" another partner or keeping abreast of matters without incremental value add to a client.
+- IB: Increment Billing | Tasks are separated and recorded in multiple time entries in one-tenth hour increments where task is unlikely to take 6 minutes (e.g., left voice message for client, reviewed three sentence e-mail)
+- IO: Insourcing Opportunity | Reflects recurring, low value/low risk work best redeploy to alternative lower cost provider.
+- IPT: Indistinguishable Prep Time | Timekeeper combines "preparation time and participation time" without specifying the type of preparatory task has been undertaken or time expended for it (e.g., prepare for and participate in all-hands conference call). Inflates time recorded for primary activity undertaken.
+- LCE: Local Counsel Engagement | Cost of interviewing and retention of local counsel where lead counsel strategically directs matter to a jurisdiction where it is unlicensed.
+- LOI: Legal Opinion Inflation | Multiple senior level attorneys record time for the preparation and review of a legal opinion.
+- MAC: Multiple Attorney Call | More than one timekeeper bills for same telephonic call without client pre-approval.
+- MS: Media Statement | Media Statements made by Outside Counsel on behalf of Client
+- MSM: Multi-Staffed Meetings | Meeting or conference attended by more than one timekeeper
+- MT: Multi-Teaming | Two timekeepers at same level with the same area of expertise should not handle the identical task within same time frame
+- NC: No Charge | Identifies tasks usually undertaken by outside counsel as a client courtesy or law firm marketing activities (audit response letter, delivery of newsletters/client alerts, attendance at routine board meeting).
+- OC: Office Communication | Excessive internal office conferences, meetings or other communications between and among outside counsel.
+- OE: Outside Expertise | Timekeeper researches or must become educated on matters outside of timekeeper's core focus or area of practice
+- OSL: Other State Law | Timekeeper undertakes task involving the law of another jurisdiction in which timekeeper is not licensed.
+- OV: Overly Verbose | Timekeeper disguises simplicity of task undertaken by writing lengthy narrative
+- PT: Paralegal Task | Attorney level personnel should spend minimal time on tasks typically delegated to paralegals (docketing, preparation of entity formation documents, document review, bate stamping).
+- PTI: Personnel Transition Inefficiencies | Time associated with a transitioning timekeeper becoming familiar with a new matter
+- PYR: Pyramiding | Legal professional rate should not be charged for task(s) not requiring legal training, knowledge or judgment (e.g., reviewing newspaper articles re: lawsuit)
+- REM: Remedial Work | Identifies remedial or corrective work due to law firm errors
+- RM: Research Memo | Memorialization of Legal Research in Written Medium
+- RMP: Routine Motion Practice | Routine motions should prepared by very junior personnel with a modest level of review by non-junior personnel (e.g., agreed upon motion, notice of deposition, etc)
+- RN: Repeated Narrative | Narrative is repeated verbatim
+- RT: Repeated Task | Natural language processing tool detects repeated activity(ies) or category(ies) of activities which occurs with unusual frequency
+- RWP: Recycled Work Product | Indentifies time entries where modifications to forms and templates are billed as if work product was created anew.
+- SIC: Small Incremental Communications | Small, repeating communications over time
+- SM-OQ: Skill Set Mismatch Overqualified | Activities flagged when falls below timekeeper's experience level.
+- SM-UQ: Skill Set Mismatch Under Qualified | Activities flagged when tasks exceeds timekeeper's level of experience.
+- SU: Status Update | Narrative entries reflect an unusually high occurence of status updates for a client
+- TAX: Tax Attorney | Identifies involvement of tax attorney in matters which are not taxation-centric.
+- TT: Travel Time | Travel time should not be charged or discounted
+- VE: Vague Entry | Narrative entry lacks sufficient detail as to nature of task(s) completed
+- WM: Wrong Matter | Identifies a task that appears to be billed to the wrong matter.
+
+INVOICE CSV FORMAT (union headers)
+KID,LINE_ITEM_DESCRIPTION,TIMEKEEPER_CLASSIFICATION,TIMEKEEPER_ID,LAW_FIRM_MATTER_ID,LINE_ITEM_DATE,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_TASK_CODE,UTBMS_CATEGORY,TIMEKEEPER_NAME,CLIENT_ID,LINE_ITEM_TOTAL
+
+Input invoice lines are CSV text below. Columns may be empty. Each line has a unique KID column.
+
+STRICT RULES
+- Consider ONLY the lines provided in the CSV (no external assumptions).
+- Only output flag codes that appear in the FLAGS list above.
+
+TASK
+Return ONLY valid JSON with this exact shape:
+{"BB":[["K1","K2"],["K3"]],"CMC":[["K7","K9"]]}
+- Keys are flag codes.
+- Values are list of groups; each group is a list of KIDs (strings).
+- If a flag has single-line matches, output each as ["KID"].
+- Omit flags that have no matches.
+- Do NOT output any extra keys or text.
+
+CSV
+KID,LINE_ITEM_DESCRIPTION,TIMEKEEPER_CLASSIFICATION,TIMEKEEPER_ID,LAW_FIRM_MATTER_ID,LINE_ITEM_DATE,LINE_ITEM_NUMBER_OF_UNITS,LINE_ITEM_TASK_CODE,UTBMS_CATEGORY,TIMEKEEPER_NAME,CLIENT_ID,LINE_ITEM_TOTAL
+kid1,Worked with Person 60 regarding research for motion to compel.,Of Counsel,TK1,MAT-001,20241125,0.5,L350,,"Garza, Janet",CPOC2,42.27
+kid2,Worked with Person 60 regarding research for motion to compel.,Of Counsel,TK1,MAT-001,20241125,0.5,L350,,"Garza, Janet",CPOC2,42.27
+kid3,Discussed with Person 60 the legal research strategy for the motion to compel.,Of Counsel,TK1,MAT-001,20241126,0.5,L350,,"Garza, Janet",CPOC2,42.27
+kid4,Follow-up with Person 60 on case law research supporting the motion to compel.,Of Counsel,TK1,MAT-001,20241126,0.5,L350,,"Garza, Janet",CPOC2,42.27

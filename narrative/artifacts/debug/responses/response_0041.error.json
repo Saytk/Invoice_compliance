@@ -1,0 +1,5 @@
+{
+  "stage": "parse_json_content",
+  "error": "json_parse_error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+  "content_head": "**Invoice Summary – INVOICE # 31714 (Date 2024‑12‑10)**  \n\n| Timekeeper (Classification) | # Line‑items | Total Units (≈ hours) | **Total Billed** |\n|-----------------------------|--------------|----------------------|------------------|\n| **Jones, Laura** (Of Counsel) | 31 | 71.9 units | **$18,309.75** |\n| **Garza, Janet** (Of Counsel) | 9 | 5.5 units | **$2,156.14** |\n| **Brem, Michael** (Partner)   | 13 | 5.9 units | **$1,363.69** |\n| **Gates, Kristina** (Paralegal) | 8 | 2.5 units | **$324.90** |\n| **TOTAL**                     | 61 | **≈ 86 units** | **$22,154.48** |\n\n---\n\n### Breakdown by Classification  \n\n| Classification | Total Billed |\n|----------------|--------------|\n| Of Counsel (Jones + Garza) | **$20,465.89** |\n| Partner (Brem)            | **$1,363.69** |\n| Paralegal (Gates)         | **$324.90** |\n| **Grand Total**           | **$22,154.48** |\n\n---\n\n### Key Points  \n\n* *"
+}

@@ -8,6 +8,27 @@ NARRATIVE_ROOT = Path(__file__).resolve().parents[1]
 THIS_DIR = Path(__file__).resolve().parent
 INTRO_PATH = THIS_DIR / "intro.txt"
 OUT_PATH = THIS_DIR / "narrative_architecture_prompt.txt"
+REPO_ROOT = NARRATIVE_ROOT.parent
+
+REL_FILES = [
+    # Narrative core + resources
+    "narrative/__init__.py",
+    "narrative/architecture_prompt/generate_architecture_prompt.py",
+    "narrative/architecture_prompt/intro.txt",
+    "narrative/artifacts/sample_input/invoices_to_check.csv",
+    "narrative/core/__init__.py",
+    "narrative/core/narrative_heuristic",
+    "narrative/core/narrative_llm.py",
+    "narrative/core/prompt_builder.py",
+    "narrative/core/required_fields.py",
+    "narrative/core/schema.py",
+    "narrative/resources/__init__.py",
+    "narrative/resources/prompts/narrative_batch_csv.txt",
+    "narrative/resources/required_fields.json",
+    # Top-level helpers
+    "app_utils.py",
+    "app_utils_bedrock.py",
+]
 
 DESC_MAP: Dict[str, str] = {
     "narrative/__init__.py": "Package marker for narrative.",
@@ -23,6 +44,9 @@ DESC_MAP: Dict[str, str] = {
     "narrative/resources/prompts/narrative_batch_csv.txt": "Template with LLM instructions to group KIDs by flag from CSV.",
     "narrative/architecture_prompt/generate_architecture_prompt.py": "Generator for this prompt (structure + contents).",
     "narrative/architecture_prompt/intro.txt": "Intro utilisateur a placer en tete du prompt final.",
+    "narrative/core/narrative_heuristic": "Local embedding heuristic demo (percentage scoring with E5).",
+    "app_utils.py": "OpenAI helper (call_openai_responses_json, parsing, logging).",
+    "app_utils_bedrock.py": "Bedrock helper (clients, invocation, model routing).",
 }
 
 EXCLUDE_DIRS = {"__pycache__"}
@@ -31,10 +55,9 @@ EXCLUDE_FILES = {OUT_PATH}
 
 
 def iter_files() -> Iterable[Path]:
-    for p in sorted(NARRATIVE_ROOT.rglob("*")):
-        if p.is_dir():
-            if p.name in EXCLUDE_DIRS:
-                continue
+    for rel in REL_FILES:
+        p = REPO_ROOT / rel
+        if not p.exists() or p.is_dir():
             continue
         if p.suffix in EXCLUDE_SUFFIXES:
             continue

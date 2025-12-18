@@ -1,0 +1,5 @@
+{
+  "stage": "parse_json_content",
+  "error": "json_parse_error: JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+  "content_head": "I see you’ve pasted a large CSV of line‑item details for invoice 31714.  \nWhat would you like me to do with it? Here are a few options (feel free to pick one or suggest something else):\n\n| Task | What it gives you |\n|------|-------------------|\n| **1. Compute the invoice total** – sum all `LINE_ITEM_TOTAL` values. |\n| **2. Summarize by timekeeper** – total hours, total amount, and number of items per `TIMEKEEPER_NAME`. |\n| **3. Summarize by task code** – total amount and count per `LINE_ITEM_TASK_CODE`. |\n| **4. Identify the highest‑cost items** – list the top 5 line items by `LINE_ITEM_TOTAL`. |\n| **5. Export a cleaned CSV** – remove empty columns, standardize dates, etc. |\n| **6. Anything else** – let me know! |\n\nJust let me know which one (or a combination) you’d like, and I’ll generate the results."
+}

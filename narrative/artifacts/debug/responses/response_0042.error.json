@@ -1,0 +1,5 @@
+{
+  "stage": "parse_json_content",
+  "error": "json_parse_error: JSONDecodeError: Expecting ',' delimiter: line 1 column 226 (char 225)",
+  "content_head": "{\"ADM\":[[\"D0256246-B5E0-4C2C-B5D6-AFB7D95154BE\",\"721E620D-F795-4837-A6FE-6E39D19CF3A7\"]],\"SM-OQ\":[[\"D0256246-B5E0-4C2C-B5D6-AFB7D95154BE\",\"721E620D-F795-4837-A6FE-6E39D19CF3A7\"]],\"OV\":[[\"81C76FCC-49BF-429B-A1C0-6BD1A5296623\"]}"
+}

@@ -170,7 +170,12 @@ from app_utils_bedrock import call_bedrock_json
 # ============================================================
 # Defaults
 # ============================================================
-DEFAULT_MODEL_ID = "openai.gpt-oss-20b-1:0"
+
+safe_guard120b = "openai.gpt-oss-20b-1:0"
+classic_120b = "openai.gpt-oss-120b-1:0"
+classic_20b = "openai.gpt-oss-20b-1:0"
+
+DEFAULT_MODEL_ID = classic_120b
 
 DEFAULT_INVOICES_CSV = NARRATIVE_ROOT / "artifacts" / "sample_input" / "invoices_to_check.csv"
 DEFAULT_REQUIRED_FIELDS_JSON = NARRATIVE_ROOT / "resources" / "required_fields.json"
@@ -343,7 +348,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Narrative LLM runner (Bedrock, debug + real usage costing)")
 
     parser.add_argument("--batch-lines", type=int, default=int(os.environ.get("NARR_LLM_BATCH_LINES", "50")))
-    parser.add_argument("--batch-flags", type=int, default=int(os.environ.get("NARR_LLM_BATCH_FLAGS", "10")))
+    parser.add_argument("--batch-flags", type=int, default=int(os.environ.get("NARR_LLM_BATCH_FLAGS", "50")))
     parser.add_argument("--budget-eur", type=float, default=float(os.environ.get("NARR_BUDGET_EUR", "5.0")))
     parser.add_argument("--dry-run", action="store_true")
 
@@ -351,7 +356,7 @@ def main() -> int:
     parser.add_argument("--price-in-per-1k-usd", type=float, default=float(os.environ.get("NARR_PRICE_IN_1K_USD", "0.00008")))
     parser.add_argument("--price-out-per-1k-usd", type=float, default=float(os.environ.get("NARR_PRICE_OUT_1K_USD", "0.00023")))
     parser.add_argument("--usd-to-eur", type=float, default=float(os.environ.get("NARR_USD_TO_EUR", "0.92")))
-    parser.add_argument("--max-output-tokens", type=int, default=int(os.environ.get("NARR_MAX_OUTPUT_TOKENS", "1000")))
+    parser.add_argument("--max-output-tokens", type=int, default=int(os.environ.get("NARR_MAX_OUTPUT_TOKENS", "100000")))
     parser.add_argument("--token-safety-mult", type=float, default=float(os.environ.get("NARR_TOKEN_SAFETY_MULT", "1.15")))
 
     args = parser.parse_args()

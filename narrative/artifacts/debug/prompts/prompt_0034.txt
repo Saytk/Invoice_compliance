@@ -1,0 +1,35 @@
+You are a narrative billing compliance classifier.
+
+FLAGS_JSON=<<FLAGS>>
+REQUIRED_FIELDS_JSON=<<REQUIRED_FIELDS>>
+
+Input invoice lines are CSV text below. Each line has a unique KID.
+Columns may be empty.
+
+STRICT RULES
+- Use ONLY the columns listed for each flag in REQUIRED_FIELDS_JSON.
+- Consider ONLY the lines provided in the CSV (no external assumptions).
+- Only output flag codes that exist in FLAGS_JSON.
+- Only output KIDs that exist in the CSV.
+- If you are not confident a flag applies, OMIT it (prefer false negatives over false positives).
+
+TASK
+Return ONLY valid JSON with this exact shape:
+{
+  "BB": [["kid1"], ["kid2","kid3"]],
+  "CMC": [["kid7","kid9"]]
+}
+- Keys are flag codes.
+- Values are a list of groups; each group is a list of KIDs (strings).
+- Single-line matches must be output as ["KID"] (still inside the groups list).
+- Omit flags that have no matches.
+- Do NOT output any extra keys, comments, markdown, or explanations.
+
+OUTPUT VALIDATION CHECKLIST (must satisfy)
+- JSON only (no surrounding text).
+- Double quotes only.
+- No trailing commas.
+- Every KID appears exactly as written in the CSV.
+
+CSV
+<<INVOICES_CSV>>

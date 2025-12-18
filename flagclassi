@@ -1,0 +1,1302 @@
+[
+  {
+    "code": "BB",
+    "group": "Billing Hygiene",
+    "name": "Block Billing",
+    "description": "Lumping or aggregation of multiple tasks into a single narrative entry with a sum total of time instead of listing each task and the precise related time.",
+    "penalty_raw": "27.50%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [],
+    "notes": "Needs semantic detection of multiple distinct tasks within one narrative."
+  },
+  {
+    "code": "CI",
+    "group": "Billing Hygiene",
+    "name": "Communication Inspecificity",
+    "description": "Outside counsel's time entries regarding electronic or telephonic communications should identify the subject matter of the communication and name the counterparty to it.",
+    "penalty_raw": "15.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Requires judging whether subject/counterparty are named in narrative."
+  },
+  {
+    "code": "CMC",
+    "group": "Billing Hygiene",
+    "name": "Cross Matter Churning",
+    "description": "Timekeeper records time for handling substantially the same task in the same time frame in two or more separate matters or invoices.",
+    "penalty_raw": "33.33%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "TIMEKEEPER_ID",
+      "LAW_FIRM_MATTER_ID",
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "LINE_ITEM_DESCRIPTION",
+      "INVOICE_NUMBER"
+    ],
+    "grouping_fields": [
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DATE"
+    ],
+    "notes": "Concept needs cross-matter/cross-invoice comparison; invoice-only view is insufficient."
+  },
+  {
+    "code": "CMHM",
+    "group": "Billing Hygiene",
+    "name": "Cross Matter Hourly Maximum",
+    "description": "TK bills more than 8 hours in a day spread across more than 1 invoice",
+    "penalty_raw": "25.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "EXP/FEE/INV_ADJ_TYPE",
+      "INVOICE_NUMBER"
+    ],
+    "grouping_fields": [
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DATE"
+    ],
+    "notes": "Requires summing hours across multiple invoices; single-invoice context cannot fully implement."
+  },
+  {
+    "code": "DC",
+    "group": "Billing Hygiene",
+    "name": "Duplicative Charge",
+    "description": "The identical line item charge appears twice in the same invoice.",
+    "penalty_raw": "99.99%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DATE",
+      "EXP/FEE/INV_ADJ_TYPE",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "LINE_ITEM_UNIT_COST",
+      "LINE_ITEM_TOTAL",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "LINE_ITEM_EXPENSE_CODE"
+    ],
+    "grouping_fields": [
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DATE",
+      "EXP/FEE/INV_ADJ_TYPE",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "LINE_ITEM_UNIT_COST",
+      "LINE_ITEM_TOTAL",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "LINE_ITEM_EXPENSE_CODE"
+    ],
+    "notes": "Detect duplicates by exact-match signature of structured charge fields within invoice."
+  },
+  {
+    "code": "DT",
+    "group": "Billing Hygiene",
+    "name": "Delinquent Time",
+    "description": "All line item time entries should be dated within 61 days of the invoice date.",
+    "penalty_raw": "0.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "INVOICE_DATE",
+      "LINE_ITEM_DATE"
+    ],
+    "grouping_fields": [],
+    "notes": "Date diff rule: line date older than invoice date by >61 days."
+  },
+  {
+    "code": "ETD",
+    "group": "Billing Hygiene",
+    "name": "Embedded Time Discrepancy",
+    "description": "Discrepancies found with time notations embedded in line narratives.",
+    "penalty_raw": "50.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [],
+    "notes": "Regex-extract embedded time values from narrative and compare to billed units."
+  },
+  {
+    "code": "ETD-OB",
+    "group": "Billing Hygiene",
+    "name": "Embedded Time Discrepancy - Over Billing",
+    "description": "The hours billed for the line is greater than the total of embedded time in the narrative.",
+    "penalty_raw": "50.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [],
+    "notes": "Compute embedded-time sum from narrative; flag if billed units exceed embedded sum."
+  },
+  {
+    "code": "ETD-UB",
+    "group": "Billing Hygiene",
+    "name": "Embedded Time Discrepancy - Under Billing",
+    "description": "The hours billed for the line is less than the total of embedded time in the narrative.",
+    "penalty_raw": "50.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [],
+    "notes": "Compute embedded-time sum from narrative; flag if billed units are below embedded sum."
+  },
+  {
+    "code": "HM",
+    "group": "Billing Hygiene",
+    "name": "Hourly Maximum",
+    "description": "Timekeepers efficiency levels decrease when working in excess of 8 hours per day.",
+    "penalty_raw": "25.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "EXP/FEE/INV_ADJ_TYPE"
+    ],
+    "grouping_fields": [
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DATE"
+    ],
+    "notes": "Sum billed time units per TK per day (fees) and flag if total exceeds 8.0."
+  },
+  {
+    "code": "IB",
+    "group": "Billing Hygiene",
+    "name": "Increment Billing",
+    "description": "Tasks are separated and recorded in multiple time entries in one-tenth hour increments where task is unlikely to take 6 minutes (e.g., left voice message for client, reviewed three sentence e-mail)",
+    "penalty_raw": "40.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION"
+    ],
+    "grouping_fields": [
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DATE"
+    ],
+    "notes": "Needs semantic judgment that described task is too small for repeated 0.1h entries."
+  },
+  {
+    "code": "IPT",
+    "group": "Billing Hygiene",
+    "name": "Indistinguishable Prep Time",
+    "description": "Timekeeper combines \"preparation time and participation time\" without specifying the type of preparatory task has been undertaken or time expended for it (e.g., prepare for and participate in all-hands conference call). Inflates time recorded for primary activity undertaken.",
+    "penalty_raw": "30.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Requires detecting combined prep+participation wording without breakdown."
+  },
+  {
+    "code": "MBI",
+    "group": "Billing Hygiene",
+    "name": "Minimum Billing Increment",
+    "description": "Time entries should be recorded in 1/10th hour increments.",
+    "penalty_raw": "20.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "EXP/FEE/INV_ADJ_TYPE"
+    ],
+    "grouping_fields": [],
+    "notes": "Validate units are multiples of 0.1 for time/fee entries."
+  },
+  {
+    "code": "NBD",
+    "group": "Billing Hygiene",
+    "name": "Non-Business Day Entry",
+    "description": "Tasks completed on holidays/weekends often completed less efficiently",
+    "penalty_raw": "20.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": false,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DATE"
+    ],
+    "grouping_fields": [],
+    "notes": "Weekend detection is deterministic; holidays require an external calendar not available."
+  },
+  {
+    "code": "NC",
+    "group": "Billing Hygiene",
+    "name": "No Charge",
+    "description": "Identifies tasks usually undertaken by outside counsel as a client courtesy or law firm marketing activities (audit response letter, delivery of newsletters/client alerts, attendance at routine board meeting).",
+    "penalty_raw": "90.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Needs semantic classification of courtesy/marketing tasks from narrative."
+  },
+  {
+    "code": "OV",
+    "group": "Billing Hygiene",
+    "name": "Overly Verbose",
+    "description": "Timekeeper disguises simplicity of task undertaken by writing lengthy narrative",
+    "penalty_raw": "40.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [],
+    "notes": "Deterministic heuristics possible (word/char count vs time), but uses narrative text."
+  },
+  {
+    "code": "RC",
+    "group": "Billing Hygiene",
+    "name": "Rate Change",
+    "description": "Identifies an unauthorized change in hourly rate.",
+    "penalty_raw": "10.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "TIMEKEEPER_ID",
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_UNIT_COST",
+      "LINE_ITEM_DATE"
+    ],
+    "grouping_fields": [
+      "TIMEKEEPER_ID"
+    ],
+    "notes": "Can detect inconsistent rates within invoice; authorization requires external rate table."
+  },
+  {
+    "code": "RH",
+    "group": "Billing Hygiene",
+    "name": "Round Hour",
+    "description": "Timekeeper bills in round hour increments (1.0, 2.0, etc) with a statistically improbable frequency.",
+    "penalty_raw": "12.50%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "EXP/FEE/INV_ADJ_TYPE"
+    ],
+    "grouping_fields": [
+      "TIMEKEEPER_ID"
+    ],
+    "notes": "Compute share of round-hour values for a TK within invoice and flag if abnormally high."
+  },
+  {
+    "code": "RN",
+    "group": "Billing Hygiene",
+    "name": "Repeated Narrative",
+    "description": "Narrative is repeated verbatim",
+    "penalty_raw": "5.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION"
+    ],
+    "grouping_fields": [
+      "LINE_ITEM_DESCRIPTION"
+    ],
+    "notes": "Exact (or normalized) string duplicate narratives across multiple lines within invoice."
+  },
+  {
+    "code": "SITE",
+    "group": "Billing Hygiene",
+    "name": "Statistically Indefensible Time Entry",
+    "description": "Time is recorded in increments that defy statistical probabilities",
+    "penalty_raw": "0.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "EXP/FEE/INV_ADJ_TYPE"
+    ],
+    "grouping_fields": [
+      "TIMEKEEPER_ID"
+    ],
+    "notes": "Distribution-based detection of improbable unit increments per TK within invoice."
+  },
+  {
+    "code": "VE",
+    "group": "Billing Hygiene",
+    "name": "Vague Entry",
+    "description": "Narrative entry lacks sufficient detail as to nature of task(s) completed",
+    "penalty_raw": "30.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Requires semantic adequacy/ specificity assessment of narrative content."
+  },
+  {
+    "code": "WM",
+    "group": "Billing Hygiene",
+    "name": "Wrong Matter",
+    "description": "Identifies a task that appears to be billed to the wrong matter.",
+    "penalty_raw": "100.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "INVOICE_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Typically needs external matter context; invoice-only can only use weak narrative cues."
+  },
+  {
+    "code": "ADM",
+    "group": "Staffing Efficiency",
+    "name": "Administrative Activities",
+    "description": "Administrative functions (billing, scheduling, calendaring, filing) billed at attorney or other legal professional rates.",
+    "penalty_raw": "90.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Detect admin-task indicators (UTBMS/narrative) + non-admin timekeeper classification."
+  },
+  {
+    "code": "AT",
+    "group": "Staffing Efficiency",
+    "name": "Associate Training",
+    "description": "Billing by junior legal personnel for activities where primary involvement by junior timekeeper pertains to his or her professional development and internal law firm training purposes.",
+    "penalty_raw": "22.50%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Needs narrative to identify training/CLE/internal development activities."
+  },
+  {
+    "code": "DW",
+    "group": "Staffing Efficiency",
+    "name": "Dispersed Work",
+    "description": "Large number of attorneys handling discrete tasks with little knowledge sharing or workflow management",
+    "penalty_raw": "12.50%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID"
+    ],
+    "notes": "Count distinct timekeepers and fragmentation by task/date within matter on same invoice."
+  },
+  {
+    "code": "FF",
+    "group": "Staffing Efficiency",
+    "name": "Fixed Fee",
+    "description": "Matter billed under a fixed fee arrangement",
+    "penalty_raw": "50.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "INVOICE_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_UNIT_COST",
+      "LINE_ITEM_TOTAL",
+      "EXP/FEE/INV_ADJ_TYPE"
+    ],
+    "grouping_fields": [],
+    "notes": "No explicit arrangement field; relies on invoice/line narrative or atypical rate/units patterns."
+  },
+  {
+    "code": "FY",
+    "group": "Staffing Efficiency",
+    "name": "First Year",
+    "description": "Time is recorded by recent law graduates who operate at a less efficient level.",
+    "penalty_raw": "30.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "TIMEKEEPER_CLASSIFICATION"
+    ],
+    "grouping_fields": [],
+    "notes": "Use timekeeper classification (e.g., first-year associate) to flag affected lines."
+  },
+  {
+    "code": "GEO",
+    "group": "Staffing Efficiency",
+    "name": "Geographical Adjustment",
+    "description": "Rates for timekeepers in major metropolitan areas adjusted to rates for equally qualified timekeepers in same firm with offices in less expensive metropolitan areas.",
+    "penalty_raw": "40.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": false,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LAW_FIRM_ID",
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_UNIT_COST"
+    ],
+    "grouping_fields": [],
+    "notes": "Needs office location/market data for timekeepers; not present in schema."
+  },
+  {
+    "code": "IO",
+    "group": "Staffing Efficiency",
+    "name": "Insourcing Opportunity",
+    "description": "Reflects recurring, low value/low risk work best redeploy to alternative lower cost provider.",
+    "penalty_raw": "12.50%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "CLIENT_ID",
+      "LAW_FIRM_MATTER_ID",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [
+      "CLIENT_ID",
+      "LAW_FIRM_MATTER_ID"
+    ],
+    "notes": "Requires identifying low-value recurring work patterns; needs semantic task valuation signals."
+  },
+  {
+    "code": "MAC",
+    "group": "Staffing Efficiency",
+    "name": "Multiple Attorney Call",
+    "description": "More than one timekeeper bills for same telephonic call without client pre-approval.",
+    "penalty_raw": "50.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LINE_ITEM_DATE",
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_ACTIVITY_CODE"
+    ],
+    "notes": "Identify call-type entries (UTBMS) and match same call subject on same date across TKs."
+  },
+  {
+    "code": "MS",
+    "group": "Staffing Efficiency",
+    "name": "Media Statement",
+    "description": "Media Statements made by Outside Counsel on behalf of Client",
+    "penalty_raw": "12.50%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Requires detecting media/press statements in narrative; codes may be insufficient."
+  },
+  {
+    "code": "MSM",
+    "group": "Staffing Efficiency",
+    "name": "Multi-Staffed Meetings",
+    "description": "Meeting or conference attended by more than one timekeeper",
+    "penalty_raw": "12.50%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LINE_ITEM_DATE",
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_ACTIVITY_CODE"
+    ],
+    "notes": "Detect meeting-type entries and match same meeting subject/date across multiple TKs."
+  },
+  {
+    "code": "MT",
+    "group": "Staffing Efficiency",
+    "name": "Multi-Teaming",
+    "description": "Two timekeepers at same level with the same area of expertise should not handle the identical task within same time frame",
+    "penalty_raw": "12.50%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "TIMEKEEPER_ID",
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "TIMEKEEPER_CLASSIFICATION"
+    ],
+    "notes": "Find multiple TKs with same classification billing same task/activity in same timeframe."
+  },
+  {
+    "code": "OE",
+    "group": "Staffing Efficiency",
+    "name": "Outside Expertise",
+    "description": "Timekeeper researches or must become educated on matters outside of timekeeper's core focus or area of practice",
+    "penalty_raw": "17.50%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Needs semantic cues (learning/educating unfamiliar area) not reliably in structured fields."
+  },
+  {
+    "code": "OSL",
+    "group": "Staffing Efficiency",
+    "name": "Other State Law",
+    "description": "Timekeeper undertakes task involving the law of another jurisdiction in which timekeeper is not licensed.",
+    "penalty_raw": "30.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Requires timekeeper licensing jurisdiction (not present) and detecting other-jurisdiction work."
+  },
+  {
+    "code": "PT",
+    "group": "Staffing Efficiency",
+    "name": "Paralegal Task",
+    "description": "Attorney level personnel should spend minimal time on tasks typically delegated to paralegals (docketing, preparation of entity formation documents, document review, bate stamping).",
+    "penalty_raw": "30.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Identify paralegal-type tasks (UTBMS/narrative) billed by attorney-level classifications."
+  },
+  {
+    "code": "PTI",
+    "group": "Staffing Efficiency",
+    "name": "Personnel Transition Inefficiencies",
+    "description": "Time associated with a transitioning timekeeper becoming familiar with a new matter",
+    "penalty_raw": "12.50%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID"
+    ],
+    "notes": "Needs narrative signals of ramp-up/onboarding; cross-line helps spot new TK appearing on matter."
+  },
+  {
+    "code": "PYR",
+    "group": "Staffing Efficiency",
+    "name": "Pyramiding",
+    "description": "Legal professional rate should not be charged for task(s) not requiring legal training, knowledge or judgment (e.g., reviewing newspaper articles re: lawsuit)",
+    "penalty_raw": "20.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_UNIT_COST",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Detect low-skill tasks (UTBMS/narrative) billed at legal-professional rates/classifications."
+  },
+  {
+    "code": "RM",
+    "group": "Staffing Efficiency",
+    "name": "Research Memo",
+    "description": "Memorialization of Legal Research in Written Medium",
+    "penalty_raw": "12.50%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [],
+    "notes": "Identify research-memo drafting from UTBMS/narrative keywords; structured codes may suffice."
+  },
+  {
+    "code": "RMP",
+    "group": "Staffing Efficiency",
+    "name": "Routine Motion Practice",
+    "description": "Routine motions should prepared by very junior personnel with a modest level of review by non-junior personnel (e.g., agreed upon motion, notice of deposition, etc)",
+    "penalty_raw": "25.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID",
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE"
+    ],
+    "notes": "Needs identifying routine motion types and evaluating staffing seniority mix; requires semantic cues."
+  },
+  {
+    "code": "SAC",
+    "group": "Staffing Efficiency",
+    "name": "Summer Associate Charge",
+    "description": "No charge for summer associates",
+    "penalty_raw": "90.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_TOTAL",
+      "LINE_ITEM_UNIT_COST",
+      "EXP/FEE/INV_ADJ_TYPE"
+    ],
+    "grouping_fields": [],
+    "notes": "Flag billable charges where timekeeper classification indicates summer associate."
+  },
+  {
+    "code": "SM-OQ",
+    "group": "Staffing Efficiency",
+    "name": "Skill Set Mismatch Overqualified",
+    "description": "Activities flagged when falls below timekeeper's experience level.",
+    "penalty_raw": "30.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Needs mapping task sophistication to timekeeper level; requires semantic interpretation beyond codes."
+  },
+  {
+    "code": "SM-UQ",
+    "group": "Staffing Efficiency",
+    "name": "Skill Set Mismatch Under Qualified",
+    "description": "Activities flagged when tasks exceeds timekeeper's level of experience.",
+    "penalty_raw": "30.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION"
+    ],
+    "grouping_fields": [],
+    "notes": "Needs mapping task complexity to timekeeper level; typically requires semantic context."
+  },
+  {
+    "code": "TP",
+    "group": "Staffing Efficiency",
+    "name": "Transitory Professional",
+    "description": "Highlights line item entries by non-core team members.",
+    "penalty_raw": "40.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "EXP/FEE/INV_ADJ_TYPE"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID"
+    ],
+    "notes": "Identify TKs with minimal share of total matter hours on invoice vs core TKs."
+  },
+  {
+    "code": "UA",
+    "group": "Staffing Efficiency",
+    "name": "Unsupervised Associate",
+    "description": "Matters where junior attorneys or non-attorney have disproportionately large number of billable hours without apparent partner oversight or involvement.",
+    "penalty_raw": "25.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID",
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "EXP/FEE/INV_ADJ_TYPE"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID"
+    ],
+    "notes": "Compare junior vs partner hours mix within matter on invoice using timekeeper classifications."
+  },
+  {
+    "code": "ULM",
+    "group": "Staffing Efficiency",
+    "name": "Under Leveraged Matter",
+    "description": "Matter staffing should use well leveraged mix of partners and associates for optimal cost efficiency.",
+    "penalty_raw": "25.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "EXP/FEE/INV_ADJ_TYPE"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID"
+    ],
+    "notes": "Assess leverage ratio (partner/senior vs junior/paralegal hours) within matter on invoice."
+  },
+  {
+    "code": "CF",
+    "group": "Workflow Efficiency",
+    "name": "Churning File",
+    "description": "Timekeeper repeatedly undertakes seemingly legitimate tasks which adds marginal value for client (e.g., repeated updates of corporate minute book, checking dockets, updating form contracts).",
+    "penalty_raw": "33.33%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE"
+    ],
+    "notes": "Needs semantic identification of low-value repeated maintenance tasks plus repetition pattern."
+  },
+  {
+    "code": "CHP",
+    "group": "Workflow Efficiency",
+    "name": "Chipping",
+    "description": "Less productive senior level timekeepers often serve as a \"sounding board\" burying small time charges within a larger matter.",
+    "penalty_raw": "12.50%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID",
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "EXP/FEE/INV_ADJ_TYPE"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID"
+    ],
+    "notes": "Heuristic: many small increments by senior TK on a matter; distribution-based within invoice."
+  },
+  {
+    "code": "ER",
+    "group": "Workflow Efficiency",
+    "name": "Excessive Research",
+    "description": "Legal research occurs in an hourly amount in excess of client's guidelines for pre-approval.",
+    "penalty_raw": "30.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "EXP/FEE/INV_ADJ_TYPE"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID"
+    ],
+    "notes": "Can sum research-coded time, but client-specific pre-approval thresholds are not available."
+  },
+  {
+    "code": "ET",
+    "group": "Workflow Efficiency",
+    "name": "Excessive Time",
+    "description": "Time for a repeated or routine task (e.g., first draft of form lease for multi-unit residential apartments, draft of UCC-1 ) exceeds industry norms for similarly experienced timekeepers.",
+    "penalty_raw": "20.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": false,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "EXP/FEE/INV_ADJ_TYPE",
+      "UTBMS_DESCRIPTION"
+    ],
+    "grouping_fields": [
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE"
+    ],
+    "notes": "Industry norm benchmarks are external; invoice-only can’t validate against norms deterministically."
+  },
+  {
+    "code": "GRZ",
+    "group": "Workflow Efficiency",
+    "name": "Grazing",
+    "description": "Senior timekeepers record hours when \"shadowing\" another partner or keeping abreast of matters without incremental value add to a client.",
+    "penalty_raw": "10.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [],
+    "notes": "Requires semantic detection of shadowing/keeping abreast style narratives."
+  },
+  {
+    "code": "LCE",
+    "group": "Workflow Efficiency",
+    "name": "Local Counsel Engagement",
+    "description": "Cost of interviewing and retention of local counsel where lead counsel strategically directs matter to a jurisdiction where it is unlicensed.",
+    "penalty_raw": "20.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "TIMEKEEPER_ID",
+      "LAW_FIRM_MATTER_ID"
+    ],
+    "grouping_fields": [],
+    "notes": "Needs jurisdiction/licensure and engagement context not present; narrative-only hints are weak."
+  },
+  {
+    "code": "LOI",
+    "group": "Workflow Efficiency",
+    "name": "Legal Opinion Inflation",
+    "description": "Multiple senior level attorneys record time for the preparation and review of a legal opinion.",
+    "penalty_raw": "50.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "LINE_ITEM_DATE",
+      "TIMEKEEPER_ID",
+      "TIMEKEEPER_CLASSIFICATION",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_DESCRIPTION"
+    ],
+    "notes": "Identify legal-opinion work via narrative/UTBMS and detect multiple senior TKs billing same opinion."
+  },
+  {
+    "code": "OC",
+    "group": "Workflow Efficiency",
+    "name": "Office Communication",
+    "description": "Excessive internal office conferences, meetings or other communications between and among outside counsel.",
+    "penalty_raw": "20.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "LINE_ITEM_DATE",
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "LINE_ITEM_DATE"
+    ],
+    "notes": "Detect internal comm via narrative/UTBMS and measure volume/frequency within matter and day."
+  },
+  {
+    "code": "REM",
+    "group": "Workflow Efficiency",
+    "name": "Remedial Work",
+    "description": "Identifies remedial or corrective work due to law firm errors",
+    "penalty_raw": "50.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [],
+    "notes": "Requires semantic detection of rework/correction due to counsel error in narrative."
+  },
+  {
+    "code": "RT",
+    "group": "Workflow Efficiency",
+    "name": "Repeated Task",
+    "description": "Natural language processing tool detects repeated activity(ies) or category(ies) of activities which occurs with unusual frequency",
+    "penalty_raw": "0.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID"
+    ],
+    "notes": "Unusual repetition requires similarity across narratives/categories; best modeled with NLP over many lines."
+  },
+  {
+    "code": "RWP",
+    "group": "Workflow Efficiency",
+    "name": "Recycled Work Product",
+    "description": "Indentifies time entries where modifications to forms and templates are billed as if work product was created anew.",
+    "penalty_raw": "30.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [],
+    "notes": "Needs semantic detection of template/form reuse vs drafting anew; structured codes insufficient."
+  },
+  {
+    "code": "SIC",
+    "group": "Workflow Efficiency",
+    "name": "Small Incremental Communications",
+    "description": "Small, repeating communications over time",
+    "penalty_raw": "40.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID",
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_ID"
+    ],
+    "notes": "Identify comm entries and detect many small units across dates; narrative helps classify communications."
+  },
+  {
+    "code": "SU",
+    "group": "Workflow Efficiency",
+    "name": "Status Update",
+    "description": "Narrative entries reflect an unusually high occurence of status updates for a client",
+    "penalty_raw": "10.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "CLIENT_ID",
+      "LINE_ITEM_DESCRIPTION",
+      "LINE_ITEM_DATE",
+      "LINE_ITEM_NUMBER_OF_UNITS"
+    ],
+    "grouping_fields": [
+      "CLIENT_ID"
+    ],
+    "notes": "Needs detecting 'status update' semantics in narratives and counting frequency per client within invoice."
+  },
+  {
+    "code": "TAX",
+    "group": "Workflow Efficiency",
+    "name": "Tax Attorney",
+    "description": "Identifies involvement of tax attorney in matters which are not taxation-centric.",
+    "penalty_raw": "30.00%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": true,
+    "primary_fields": [
+      "LAW_FIRM_MATTER_ID",
+      "TIMEKEEPER_CLASSIFICATION",
+      "TIMEKEEPER_NAME",
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "UTBMS_DESCRIPTION",
+      "LINE_ITEM_DESCRIPTION"
+    ],
+    "grouping_fields": [
+      "LAW_FIRM_MATTER_ID"
+    ],
+    "notes": "Needs identifying tax specialists and determining whether matter is tax-centric; matter topic not in schema."
+  },
+  {
+    "code": "TT",
+    "group": "Workflow Efficiency",
+    "name": "Travel Time",
+    "description": "Travel time should not be charged or discounted",
+    "penalty_raw": "50.00%",
+    "is_narrative": false,
+    "can_be_deterministic_with_available_fields": true,
+    "requires_line_description": false,
+    "requires_cross_line_context": false,
+    "primary_fields": [
+      "LINE_ITEM_TASK_CODE",
+      "LINE_ITEM_ACTIVITY_CODE",
+      "LINE_ITEM_EXPENSE_CODE",
+      "UTBMS_FAMILY",
+      "UTBMS_DESCRIPTION",
+      "EXP/FEE/INV_ADJ_TYPE",
+      "LINE_ITEM_NUMBER_OF_UNITS",
+      "LINE_ITEM_TOTAL"
+    ],
+    "grouping_fields": [],
+    "notes": "Flag travel-coded task/activity/expense via UTBMS metadata; apply discount/zeroing logic as needed."
+  }
+]

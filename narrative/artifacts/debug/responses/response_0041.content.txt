@@ -1,0 +1,46 @@
+**Invoice Summary – INVOICE # 31714 (Date 2024‑12‑10)**  
+
+| Timekeeper (Classification) | # Line‑items | Total Units (≈ hours) | **Total Billed** |
+|-----------------------------|--------------|----------------------|------------------|
+| **Jones, Laura** (Of Counsel) | 31 | 71.9 units | **$18,309.75** |
+| **Garza, Janet** (Of Counsel) | 9 | 5.5 units | **$2,156.14** |
+| **Brem, Michael** (Partner)   | 13 | 5.9 units | **$1,363.69** |
+| **Gates, Kristina** (Paralegal) | 8 | 2.5 units | **$324.90** |
+| **TOTAL**                     | 61 | **≈ 86 units** | **$22,154.48** |
+
+---
+
+### Breakdown by Classification  
+
+| Classification | Total Billed |
+|----------------|--------------|
+| Of Counsel (Jones + Garza) | **$20,465.89** |
+| Partner (Brem)            | **$1,363.69** |
+| Paralegal (Gates)         | **$324.90** |
+| **Grand Total**           | **$22,154.48** |
+
+---
+
+### Key Points  
+
+* **Invoice Number / Date:** 31714 / 2024‑12‑10  
+* **Law Firm:** Schirrmeister Diaz‑Arrastia Brem LLP  
+* **Client:** Client POC2  
+* **Number of distinct line‑items:** 61  
+* **Total units (the “LINE_ITEM_NUMBER_OF_UNITS” column, which in this data set represents hours or fractions thereof):** roughly **86 units** (≈ 86 hours).  
+
+---
+
+### How the totals were calculated  
+
+1. **Line‑item total** (`LINE_ITEM_TOTAL`) was summed for each row.  
+2. Totals were then aggregated by **timekeeper** and by **classification**.  
+3. The **grand total** is the sum of all line‑item totals:  
+
+\[
+\text{Grand Total}=18{,}309.75+2{,}156.14+1{,}363.69+324.90 = \boxed{22{,}154.48}
+\]
+
+---
+
+If you need any additional breakdowns (e.g., by activity code, by billing dates, or a CSV export of the aggregated data), just let me know!

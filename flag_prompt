@@ -1,0 +1,177 @@
+You are a senior billing-compliance engineer and taxonomy designer for legal invoices.
+
+Your task is to ANALYZE a list of billing flags and, for EACH flag, determine what
+type of data, logic, and context are required to implement the rule using the invoice
+line schema provided below.
+
+Your output MUST be a single valid JSON array.  
+NO comments, NO markdown, NO explanations outside the JSON.  
+Each element corresponds to ONE flag.
+
+====================================================
+INVOICE DATA AVAILABLE (ENRICHED LINE DICTIONARY)
+====================================================
+
+Each invoice line is a Python dict with the following fields:
+
+Invoice-level fields:
+- INVOICE_DATE (string "YYYYMMDD" or "YYYY-MM-DD")
+- INVOICE_NUMBER (string)
+- CLIENT_ID (string)
+- LAW_FIRM_MATTER_ID (string)
+- INVOICE_TOTAL (numeric string)
+- BILLING_START_DATE (string)
+- BILLING_END_DATE (string)
+- INVOICE_DESCRIPTION (string)
+
+Line-level fields:
+- LINE_ITEM_NUMBER (string or int)
+- EXP/FEE/INV_ADJ_TYPE (string)
+- LINE_ITEM_NUMBER_OF_UNITS (numeric string)
+- LINE_ITEM_ADJUSTMENT_AMOUNT (numeric string)
+- LINE_ITEM_TOTAL (numeric string)
+- LINE_ITEM_DATE (string)
+- LINE_ITEM_TASK_CODE (string)
+- LINE_ITEM_EXPENSE_CODE (string)
+- LINE_ITEM_ACTIVITY_CODE (string)
+- LINE_ITEM_DESCRIPTION (string)
+- LINE_ITEM_UNIT_COST (numeric string)
+
+Timekeeper fields:
+- TIMEKEEPER_ID (string)
+- TIMEKEEPER_NAME (string)
+- TIMEKEEPER_CLASSIFICATION (string)
+
+Firm / Client fields:
+- LAW_FIRM_ID (string)
+- LAW_FIRM_NAME (string)
+- CLIENT_NAME (string)
+
+System identifiers:
+- RUNID (string)
+- KID (string)
+
+UTBMS joined fields (pre-joined from UTBMS tables):
+- UTBMS_CODE (string)
+- UTBMS_CATEGORY (string)
+- UTBMS_SUBCATEGORY (string)
+- UTBMS_DESCRIPTION (string)
+- UTBMS_FAMILY (string: "TASK", "ACTIVITY", "EXPENSE")
+
+IMPORTANT CONTEXT:
+- The narrative model will always receive all lines that share the same INVOICE_NUMBER.
+- Cross-line logic is therefore limited to comparisons within a single invoice.
+- A separate batching layer will decide which lines to group together **inside the same invoice**
+  before sending them to a narrative model.
+
+NO external databases, NO APIs, NO client-specific guidelines, NO human review.
+
+====================================================
+CLASSIFICATION OBJECTIVES
+====================================================
+
+For EACH flag in the CSV table, you must output:
+
+1) "is_narrative" (boolean)  
+   TRUE if the rule fundamentally requires interpreting the free-text narrative
+   (LINE_ITEM_DESCRIPTION), e.g. vague entries, overly verbose, block billing.
+
+2) "can_be_deterministic_with_available_fields" (boolean)  
+   TRUE if the rule can be implemented entirely using the available structured
+   fields with deterministic logic and NO semantic NLP.
+
+3) "requires_line_description" (boolean)  
+   TRUE if the narrative text is required to apply the flag (e.g. vague entry).
+
+4) "requires_cross_line_context" (boolean)  
+   TRUE if applying the rule requires comparing multiple lines **within the same
+   invoice**: duplicates, multi-staffing, repeated tasks, cross-matter churning, etc.
+
+5) "primary_fields" (array of strings)  
+   - Minimal set of schema fields that must be provided to evaluate this flag.
+   - At runtime, fields NOT listed here may be omitted or treated as empty.
+   - Include any field needed either for single-line logic or for cross-line
+     aggregation (dates, hours, TK, matter, task code, etc.).
+   Examples:
+   - ["LINE_ITEM_DESCRIPTION"]
+   - ["LINE_ITEM_NUMBER_OF_UNITS", "LINE_ITEM_DATE"]
+   - ["TIMEKEEPER_ID", "LAW_FIRM_MATTER_ID", "LINE_ITEM_TASK_CODE"]
+
+6) "grouping_fields" (array of strings)  
+   - Only relevant when "requires_cross_line_context" is true.  
+   - Subset of "primary_fields" that should be used as **group-by keys** when
+     batching lines inside the same invoice for this flag.  
+   - Lines in the same batch should share identical values for all grouping_fields
+     to be plausible candidates for the same instance of the flag.  
+   Examples:
+   - Repeated tasks by matter → ["LAW_FIRM_MATTER_ID"]
+   - Same TK + same day → ["TIMEKEEPER_ID", "LINE_ITEM_DATE"]
+   - Same TK + same task code → ["TIMEKEEPER_ID", "LINE_ITEM_TASK_CODE"]
+
+   For flags that do NOT require cross-line context, set "grouping_fields": [].
+
+7) "notes"  
+   ≤ 200 characters. VERY short justification of choices. No rambling.
+
+====================================================
+BATCHING & GROUPING GUIDANCE
+====================================================
+
+A separate batching engine will:
+
+- Always work **within a single invoice** (same INVOICE_NUMBER).
+- Use "grouping_fields" to cluster lines that:
+  - Share the same values for these keys, AND
+  - Are plausible candidates for a single instance of the flag.
+
+Your job is therefore:
+
+- To mark "requires_cross_line_context" accurately.
+- To choose "primary_fields" as the minimal field set needed for the rule.
+- To choose "grouping_fields" so they reflect **natural grouping** for that flag:
+  - Same timekeeper when the flag is about an individual's pattern (e.g. RH, HM, IB).
+  - Same matter when the flag is about matter-level repetition (e.g. RT, RWP).
+  - Same date when the rule is day-based (e.g. HM, CMHM).
+  - Same client when the rule is client-wide frequency (e.g. SU).
+
+Do NOT invent pseudo-fields like "ALL_LINES".  
+Only use actual schema fields listed in the INVOICE DATA AVAILABLE section.
+
+====================================================
+OUTPUT JSON FORMAT
+====================================================
+
+You MUST output a single JSON array containing objects of the form:
+
+[
+  {
+    "code": "BB",
+    "group": "Billing Hygiene",
+    "name": "Block Billing",
+    "description": "Lumping or aggregation of multiple tasks...",
+    "penalty_raw": "27.50%",
+    "is_narrative": true,
+    "can_be_deterministic_with_available_fields": false,
+    "requires_line_description": true,
+    "requires_cross_line_context": false,
+    "primary_fields": ["LINE_ITEM_DESCRIPTION"],
+    "grouping_fields": [],
+    "notes": "Requires semantic analysis of whether multiple tasks are lumped together."
+  },
+  ...
+]
+
+Strict rules:
+- Field "code" MUST be the FLAG ABBR.
+- "group", "name", "description", and "penalty_raw" come directly from CSV.
+- "primary_fields" and "grouping_fields" MUST list only valid schema fields.
+- "grouping_fields" MUST be a subset of "primary_fields".
+- "notes" ≤ 200 chars, no markdown, no quotes other than JSON quotes.
+- NO trailing commas.
+- NO text outside the JSON array.
+
+====================================================
+FLAGS TABLE (CSV)
+====================================================
+
+<<FLAGS_SAMPLE>>

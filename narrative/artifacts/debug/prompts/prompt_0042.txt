@@ -138,22 +138,3 @@ A82F4A48-7D4B-4B19-A963-828A6984ED95,Reviewed notice of appearance of additional
 9EEB6755-0806-4908-9CA8-B2BDB2A50C19,Worked with Person 60 regarding remaining discovery.,Partner,,,20241118,0.2,L390,,"Brem, Michael",,94.05
 9CBADF8F-CC0B-4484-B5BB-43FE51E17194,Reviewed correspondence between counsel regarding upcoming hearing on the Person 63 minors' hearing regarding settlement.,Paralegal,,,20241126,0.1,L110,,"Gates, Kristina",,18.05
 8DB9D9FB-FA0D-4747-94C7-CD41D69D6D43,Reviewed Intervenor's motion to compel.,Of Counsel,,,20241119,0.3,L350,,"Jones, Laura",,126.82
-8CC7D759-2E14-4415-B9E5-26E27980EAD9,Legal research regarding duty issues for summary judgment.,Of Counsel,,,20241118,4.5,L240,,"Jones, Laura",,1902.37
-8CF26BC0-EA89-40E9-BCA3-BC709BE61DE2,Reviewed production documents to confirm confidentiality designations.,Of Counsel,,,20241105,0.6,L390,,"Jones, Laura",,253.65
-7B152F4D-FA66-47C3-9CCE-46FF3007A4B1,Drafted memo to Entity 37's counsel regarding discovery responses.,Partner,,,20241108,0.3,L310,,"Brem, Michael",,141.07
-5AE0830B-0819-4DB4-8F87-28740DECF731,Worked with other defense counsel forwarding plaintiffs' proposed trial dates.,Partner,,,20241118,0.2,L190,,"Brem, Michael",,94.05
-5BA7C147-361F-41D8-9A97-F8673F4FD60E,Reviewed newly-received request for status conference regarding minors' settlement with the Entity 37 entities and request for attorneys fees.,Paralegal,,,20241114,0.4,L110,,"Gates, Kristina",,72.2
-5FB1B0FD-4CB7-46CF-8677-F63D689F8569,Worked with Person 51 regarding Entity 37 motion to modify protective order and order in Entity 36 case.,Of Counsel,,,20241107,0.2,L390,,"Jones, Laura",,84.55
-5D2A8377-0111-4D3C-9C2F-40CBB1699590,Worked with Person 51 regarding expert review of cleaning chemicals at Entity 37.,Of Counsel,,,20241118,0.1,L130,,"Jones, Laura",,42.27
-4FC123B8-CF3B-41E2-944C-FC5EA20E930B,Worked with Entity 41's counsel regarding Entity 41 shipments to Ecuador.,Partner,,,20241118,0.2,L110,,"Brem, Michael",,94.05
-4B802E08-6C07-4597-A03D-B647191FFC6B,Continued drafting response to Person 57's motion to compel.,Of Counsel,,,20241125,6.1,L350,,"Jones, Laura",,2578.77
-3C5A28D9-068B-47C3-8FFD-13CD6E0FF489,Drafted memos to Entity 37's and Entity 36' counsel regarding possible agreement on Entity 37's motion to modify protective order.,Partner,,,20241107,0.2,L350,,"Brem, Michael",,94.05
-2F544D9C-25B9-4BE7-B8B8-64D6A6BF8543,Reviewed probate court filings for Person 57's estate.,Of Counsel,,,20241113,0.3,L110,,"Jones, Laura",,126.82
-2B7C2E9F-C2A4-4AAB-984A-059DA249CCC1,Reviewed and analyzed Intervenor's motion to compel.,Of Counsel,,,20241125,0.4,L350,,"Garza, Janet",,169.1
-1F6665BD-6388-47CA-898C-62BB8E6A000A,Teleconference with Person 58 regarding Entity 36 documents issue.,Of Counsel,,,20241112,0.4,L390,,"Jones, Laura",,169.1
-1FBF1916-2916-481D-B4D5-423758856E97,Reviewed best cases for argument that a showing is required of substantial similarity.,Of Counsel,,,20241127,0.4,L250,,"Garza, Janet",,169.24
-1A2B8B9F-1E60-4E09-BB4A-9A807A9F9208,Legal research regarding evidentiary showing necessary to prove that two accidents are substantially similar.,Of Counsel,,,20241125,1.6,L350,,"Garza, Janet",,676.4
-1D98D9E0-00C6-4531-9C5B-E11564B11244,Worked with other counsel regarding possible status conference.,Partner,,,20241113,0.3,L230,,"Brem, Michael",,141.07
-0FE5E3C1-496E-466E-B92B-B0CABA817107,Legal research regarding other accident cases involving negligent accidents for trucking cases.,Of Counsel,,,20241126,0.3,L350,,"Garza, Janet",,126.82
-0B371574-7166-4CB3-940C-0FF37C3C3EA6,Compared confidential list from Person 59 to confidentiality designations.,Of Counsel,,,20241105,0.8,L390,,"Jones, Laura",,338.2
-0B700E7C-02E3-4FEC-A4FA-82F95E038852,Reviewed deposition testimony for evidence supporting factual background and arguments in response to Intervenor's motion to compel.,Of Counsel,,,20241127,6.8,L350,,"Jones, Laura",,2874.7

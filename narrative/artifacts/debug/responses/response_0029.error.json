@@ -1,0 +1,5 @@
+{
+  "stage": "parse_json_content",
+  "error": "empty_text",
+  "content_head": ""
+}
